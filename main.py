@@ -1,9 +1,8 @@
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from fedxgboost.FedXGBoost import FedXGBoostClassifier
+from federated_xgboost.FedXGBoost import FedXGBoostClassifier
 from common.Common import rank, logger
-
 
 def test():
     data = pd.read_csv('./dataset/iris.csv').values
@@ -61,13 +60,13 @@ def test():
     # b.display()
 
     if rank == 1:
-        y_pred = model.predict_fed(X_test_A, fNameA)
+        y_pred = model.predict(X_test_A, fNameA)
     elif rank == 2:
-        y_pred = model.predict_fed(X_test_B, fNameB)
+        y_pred = model.predict(X_test_B, fNameB)
     elif rank == 3:
-        y_pred = model.predict_fed(X_test_C, fNameC)
+        y_pred = model.predict(X_test_C, fNameC)
     elif rank == 4:
-        y_pred = model.predict_fed(X_test_D, fNameD)
+        y_pred = model.predict(X_test_D, fNameD)
     else:
         model.predict(np.zeros_like(X_test_A))
 
@@ -182,15 +181,15 @@ def main4():
     model.boost()
 
     if rank == 1:
-        y_pred = model.predict_fed(X_test_A, fNameA)
+        y_pred = model.predict(X_test_A, fNameA)
     elif rank == 2:
-        y_pred = model.predict_fed(X_test_B, fNameB)
+        y_pred = model.predict(X_test_B, fNameB)
     elif rank == 3:
-        y_pred = model.predict_fed(X_test_C, fNameC)
+        y_pred = model.predict(X_test_C, fNameC)
     elif rank == 4:
-        y_pred = model.predict_fed(X_test_D, fNameD)
+        y_pred = model.predict(X_test_D, fNameD)
     else:
-        model.predict_fed(np.zeros_like(X_test_A))
+        model.predict(np.zeros_like(X_test_A))
 
     if rank == 1:
         y_pred = 1.0 / (1.0 + np.exp(-y_pred))

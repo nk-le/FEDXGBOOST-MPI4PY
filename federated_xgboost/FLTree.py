@@ -1,4 +1,3 @@
-from locale import currency
 import numpy as np
 from common.Common import Direction, FedDirRequestInfo, FedDirResponseInfo, logger, rank, comm, PARTY_ID, MSG_ID, TreeNodeType, SplittingInfo
 from algo.LossFunction import LeastSquareLoss, LogLoss
@@ -7,33 +6,9 @@ from data_structure.DataBaseStructure import *
 from visualizer.TreeRender import FLVisNode
 
 
-class XgboostLearningParam:
-    def __init__(self) -> None:
-        self.LOSS_FUNC = LogLoss()
-        self.LAMBDA = 1
-        self.GAMMA = 0.5
-        self.EPS = 0.1
-        self.N_TREES = 3
-        self.MAX_DEPTH = 3
+from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitting_score
 
-
-def compute_splitting_score(SM, GVec, HVec, lamb):
-    G = sum(GVec)
-    H = sum(HVec)
-    GRVec = np.matmul(SM, GVec)
-    HRVec = np.matmul(SM, HVec)
-    GLVec = G - GRVec
-    HLVec = H - HRVec
-    # logger.info("Received from party {} \n".format(partners) + \
-    #     "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
-    #     "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T))  
-
-    L = (GLVec*GLVec / (HLVec + lamb)) + (GRVec*GRVec / (HRVec + lamb)) - (G*G / (H + lamb))
-    return L.reshape(-1)
-
-
-
-class VerticalFedXGBoostTree():
+class FLPlainXGBoostTree():
     def __init__(self, param:XgboostLearningParam = XgboostLearningParam()):
         self.learningParam = param
         self.root = FLTreeNode()
@@ -72,7 +47,7 @@ class VerticalFedXGBoostTree():
 
         if(rank != 0):
             rootNode = FLTreeNode()
-            self.grow(qDataBase, depth = 0, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
+            self.fed_grow(qDataBase, depth = 0, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
             self.root = rootNode
             # Display the tree in the log file
             b = FLVisNode(self.root)
@@ -84,16 +59,9 @@ class VerticalFedXGBoostTree():
         ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
         return ret
 
-    def grow(self, qDataBase: QuantiledDataBase, depth=0, NodeDirection = TreeNodeType.ROOT, currentNode : FLTreeNode = None):
-        logger.info("Tree is growing depth-wise. Current depth: {}".format(depth) + " Node's type: {}".format(NodeDirection))
-        currentNode.nUsers = qDataBase.nUsers
-
-        # Assign the unique fed tree id for each node
-        currentNode.FID = self.nNode
-        self.nNode += 1
-
+    # This method requires normally the highest privacy concern
+    def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Start finding the optimal candidate federatedly
-        # TODO: write a generic method because this part depends on the secure protocol        
         if rank == PARTY_ID.ACTIVE_PARTY:
             sInfo = SplittingInfo()
             nprocs = comm.Get_size()
@@ -159,8 +127,24 @@ class VerticalFedXGBoostTree():
             logger.warning("Sent the splitting matrix to the active party")         
 
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
-            logger.warning("Received the Splitting Info from the active party")   
+            logger.warning("Received the Splitting Info from the active party") 
 
+
+        return sInfo
+
+
+    def fed_grow(self, qDataBase: QuantiledDataBase, depth=0, NodeDirection = TreeNodeType.ROOT, currentNode : FLTreeNode = None):
+        logger.info("Tree is growing depth-wise. Current depth: {}".format(depth) + " Node's type: {}".format(NodeDirection))
+        currentNode.nUsers = qDataBase.nUsers
+
+        # Assign the unique fed tree id for each node
+        currentNode.FID = self.nNode
+        self.nNode += 1
+
+        # Distributed splitting evaluation
+
+        sInfo = self.fed_optimal_split_finding(qDataBase)
+        
         # Set the optimal split as the owner ID of the current tree node
         # If the selected party is me
         if(rank == sInfo.bestSplitParty):
@@ -170,7 +154,6 @@ class VerticalFedXGBoostTree():
             currentNode.set_splitting_info(sInfo)
         elif rank != 0:
             currentNode.set_splitting_info(sInfo)
-        
         sInfo.log()
 
         # Get the optimal splitting candidates and partition them into two databases
@@ -189,8 +172,8 @@ class VerticalFedXGBoostTree():
                 currentNode.rightBranch = FLTreeNode()
 
                 # grow recursively
-                self.grow(lD, depth,NodeDirection = TreeNodeType.LEFT, currentNode=currentNode.leftBranch)
-                self.grow(rD, depth, NodeDirection = TreeNodeType.RIGHT, currentNode=currentNode.rightBranch)
+                self.fed_grow(lD, depth,NodeDirection = TreeNodeType.LEFT, currentNode=currentNode.leftBranch)
+                self.fed_grow(rD, depth, NodeDirection = TreeNodeType.RIGHT, currentNode=currentNode.rightBranch)
             
             else:
                 endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec, lamb = 0.2)
@@ -211,7 +194,7 @@ class VerticalFedXGBoostTree():
             #qDataBase.remove_feature(feature) # TODO: Implement a generic method to update the database before going into the next depth
             pass
 
-    def predict_fed(self, database: DataBase): # Encapsulated for many data
+    def fed_predict(self, database: DataBase): # Encapsulated for many data
         """
         Data matrix has the same format as the data appended to the database, includes the features' values
         
@@ -322,37 +305,5 @@ class VerticalFedXGBoostTree():
 
     def predict(self, dataTable, featureName):        
         dataBase = DataBase.data_matrix_to_database(dataTable, featureName)
-        return self.predict_fed(dataBase)
-        
-
-
-
-
-# class FedXGBoostSecureHandler:
-#     QR = []
-#     pass
-
-#     def generate_secure_kernel(mat):
-#         import scipy.linalg
-#         return scipy.linalg.qr(mat)
-
-#     def calc_secure_response(privateMat, rxKernelMat):
-#         n = len(rxKernelMat) # n users 
-#         r = len(rxKernelMat[0]) # number of kernel vectors
-#         Z = rxKernelMat
-#         return np.matmul((np.identity(n) - np.matmul(Z, np.transpose(Z))), privateMat)
-
-#     def generate_splitting_matrix(dataVector, quantileBin):
-#         n = len(dataVector) # Rows as n users
-#         l = len(quantileBin) # amount of splitting candidates
-
-#         retSplittingMat = []
-#         for candidateIter in range(l):
-#             v = np.zeros(n)
-#             for userIter in range(n):
-#                 v[userIter] = (dataVector[userIter] > max(quantileBin[candidateIter]))  
-#             retSplittingMat.append(v)
-
-#         return retSplittingMat
-
-
+        return self.fed_predict(dataBase)
+     
