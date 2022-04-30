@@ -8,7 +8,6 @@ from common.Common import PARTY_ID, logger, rank, clientNum
 from algo.LossFunction import LogLoss, LeastSquareLoss
 
 
-
 class FedXGBoostClassifier():
     def __init__(self, nTree = 3):
         self.nTree = 3
