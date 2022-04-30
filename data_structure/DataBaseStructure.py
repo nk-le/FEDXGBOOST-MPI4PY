@@ -197,9 +197,14 @@ class QuantiledDataBase(DataBase):
         for key, feature in self.featureDict.items():
             fSM, scArr = self.featureDict[key].get_splitting_info()
             for v, s in zip(fSM, scArr):
-                if(np.all(v == bestSplitVector)):
+                if(np.allclose(v, bestSplitVector)):
                     return key, s
+                if(rank == 3):
+                    logger.info("%s: %d", v, np.allclose(v, bestSplitVector))
 
+        logger.error("No matched splitting candidate.")
+        logger.error("Optimal splitting vector: %s", str(bestSplitVector))
+        logger.error("My splitting matrix: %s", str(self.get_merged_splitting_matrix()))
         assert(False)
 
 
@@ -228,8 +233,8 @@ class QuantiledDataBase(DataBase):
         return retL, retR
 
     def appendGradientsHessian(self, g, h):
-        self.gradVec = g
-        self.hessVec = h
+        self.gradVec = np.array(g).reshape(-1,1)
+        self.hessVec = np.array(h).reshape(-1,1)
 
 
 

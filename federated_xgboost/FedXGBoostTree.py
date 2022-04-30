@@ -1,9 +1,22 @@
+from copy import deepcopy
 import numpy as np
+from scipy.linalg import null_space
 from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
 from federated_xgboost.FLTree import FLPlainXGBoostTree
+
+class FEDXGBOOST_MSGID:
+    SECURE_KERNEL = 200
+    SECURE_RESPONSE = 201
+    OPTIMAL_SPLITTING_SELECTION = 202
+    OPTIMAL_SPLITTING_INFO = 203
+
+def secure_response(privateX, U):
+    Z = U[:, np.random.randint(U.shape[1], size=2)]
+    W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
+    return np.matmul(W,privateX)
 
 class VerticalFedXGBoostTree(FLPlainXGBoostTree):
     def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):
@@ -12,87 +25,100 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
     # Child class declares the privacy optimal split finding
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Start finding the optimal candidate federatedly
+        nprocs = comm.Get_size()
+        sInfo = SplittingInfo()
+            
         if rank == PARTY_ID.ACTIVE_PARTY:
-            sInfo = SplittingInfo()
-            nprocs = comm.Get_size()
-
             # Perform the QR Decomposition
+            matGH = np.concatenate((qDataBase.gradVec, qDataBase.hessVec), axis=1)
 
-
-            # Send the Secure kernel to the PP
-
-            # Receive the Secure Response from the PP
-
-            # Obtain the optimal score
-
-            # Collect all private splitting info from the partners to find the optimal splitting candidates
+            #print(matGH)
+            #q, r = np.linalg.qr(matGH)
+            Z = null_space(matGH.T)
+            logger.info("Performed QR decomposition of [G, H])")
+            logger.debug("GradHess matrix: %s", str(matGH.T))
+            logger.debug("Nullspace matrix: %s", str(Z))
+            
             for partners in range(2, nprocs):   
-                
-                
-                
-                
-                rxSM = comm.recv(source = partners, tag = MSG_ID.RAW_SPLITTING_MATRIX)
+                # Send the Secure kernel to the PP
+                status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
+                #logger.warning("Sent the splitting matrix to the active party")  
 
+                # Receive the Secure Response from the PP
+                rxSR = comm.recv(source=partners, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
+                logger.warning("Received the secure response from the passive party")
+
+                # Collect all private splitting info from the partners to find the optimal splitting candidates
                 # Find the optimal splitting score iff the splitting matrix is provided
-                if rxSM.size:
-                    sumGRVec = np.matmul(rxSM, qDataBase.gradVec).reshape(-1)
-                    sumHRVec = np.matmul(rxSM, qDataBase.hessVec).reshape(-1)
+                rxSR = rxSR.T
+                if rxSR.size:
+                    sumGRVec = np.matmul(rxSR, qDataBase.gradVec).reshape(-1)
+                    sumHRVec = np.matmul(rxSR, qDataBase.hessVec).reshape(-1)
                     sumGLVec = sum(qDataBase.gradVec) - sumGRVec
                     sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    L = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec, 0.01)
-
+                    L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec, 0.01)
                     logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
                         "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
                         "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
                         "\nSplitting Score: {}".format(L.T))       
                     
-                    # Optimal candidate of 1 partner party
-                    # Select the optimal candidates without all zeros or one elements of the splitting)
-                    isValid = False
-                    excId = np.zeros(L.size, dtype=bool)
-                    for id in range(len(L)):
-                        splitVector = rxSM[id, :]
-
-                        nL = np.count_nonzero(splitVector == 0.0)
-                        nR = np.count_nonzero(splitVector == 1.0)
-                        thres = 0.1 # TODO: bring this value outside as parameters 
-                        isValid = (((nL/len(splitVector)) > thres) and ((nR/len(splitVector)) > thres))
-                        #print(nL, nR, len(splitVector), isValid)
-                        if not isValid:
-                            excId[id] = True
-
-                    # Mask the exception index to avoid strong imbalance between each node's users ratio     
-                    tmpL = np.ma.array(L, mask=excId) 
-                    bestSplitId = np.argmax(tmpL)
-                    splitVector = rxSM[bestSplitId, :]
-                    maxScore = tmpL[bestSplitId]     
+                    bestSplitId = np.argmax(L)
+                    maxScore = L[bestSplitId]
 
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
-                        sInfo.bestSplittingVector = rxSM[bestSplitId, :]
+                        sInfo.bestSplittingVector = None # Unknown for AP
                                 
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
-                data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
-                logger.info("Sent splitting info to clients {}".format(partners))
+                data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
+            #logger.info("Sent splitting info to clients {}".format(sInfo.bestSplitParty))
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
-            # qDataBase.printInfo()
             privateSM = qDataBase.get_merged_splitting_matrix()
             logger.info("Merged splitting options from all features and obtain the private splitting matrix with shape of {}".format(str(privateSM.shape)))
             logger.debug("Value of the private splitting matrix is \n{}".format(str(privateSM))) 
 
-            # Send the splitting matrix to the active party
-            txSM = comm.send(privateSM, dest = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.RAW_SPLITTING_MATRIX)
-            logger.warning("Sent the splitting matrix to the active party")         
+            # Receive the secured kernel
+            secureKernel = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
+            logger.warning("Received the secure kernel from the active party")
 
-            sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
+            # Compute the secure response and send to the active party
+            secureRep = np.array([])
+            if(privateSM.size):
+                secureRep = secure_response(privateSM.T, secureKernel)
+                logger.warning("Sent the secure response to the active party")
+            else:
+                logger.warning("No splitting option feasible. Sent empty splitting matrix the active party")
+            status = comm.send(secureRep, dest=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
+
+            # Receive the optimal splitting information
+            sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)            
             logger.warning("Received the Splitting Info from the active party") 
+        
+        # Set the optimal split as the owner ID of the current tree node
+        # If the selected party is me
+        if(rank == sInfo.bestSplitParty):
+            sInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
+            feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
 
+            updateSInfo = deepcopy(sInfo)
+            updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
+            for partners in range(1, nprocs):
+                if(partners != rank): # only send to the other parties
+                    status = comm.send(updateSInfo, dest=partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_INFO)
+
+            # Only the selected rank has these information so it saves for itself
+            sInfo.featureName = feature
+            sInfo.splitValue = value
+
+        # The other parties receive the final splitting info to construct the tree node
+        elif(rank != 0):
+            sInfo = comm.recv(source = sInfo.bestSplitParty, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_INFO)
 
         return sInfo
 

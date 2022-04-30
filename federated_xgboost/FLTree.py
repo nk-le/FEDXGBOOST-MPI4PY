@@ -76,7 +76,7 @@ class FLPlainXGBoostTree():
                     sumGLVec = sum(qDataBase.gradVec) - sumGRVec
                     sumHLVec = sum(qDataBase.hessVec) - sumHRVec
                     L = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec, 0.01)
-
+                
                     logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
                         "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
                         "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
@@ -112,6 +112,14 @@ class FLPlainXGBoostTree():
             logger.warning("Received the Splitting Info from the active party") 
 
 
+        # Post processing the splitting information before returning
+        # Set the optimal split as the owner ID of the current tree node
+        # If the selected party is me
+        if(rank == sInfo.bestSplitParty):
+            feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
+            sInfo.featureName = feature
+            sInfo.splitValue = value
+        
         return sInfo
 
 
@@ -126,17 +134,8 @@ class FLPlainXGBoostTree():
         # Distributed splitting evaluation
 
         sInfo = self.fed_optimal_split_finding(qDataBase)
-        
-        # Set the optimal split as the owner ID of the current tree node
-        # If the selected party is me
-        if(rank == sInfo.bestSplitParty):
-            feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
-            sInfo.featureName = feature
-            sInfo.splitValue = value
-            currentNode.set_splitting_info(sInfo)
-        elif rank != 0:
-            currentNode.set_splitting_info(sInfo)
         sInfo.log()
+        currentNode.set_splitting_info(sInfo)
 
         # Get the optimal splitting candidates and partition them into two databases
         if(sInfo.bestSplittingVector is not None):      
