@@ -15,8 +15,22 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         if rank == PARTY_ID.ACTIVE_PARTY:
             sInfo = SplittingInfo()
             nprocs = comm.Get_size()
+
+            # Perform the QR Decomposition
+
+
+            # Send the Secure kernel to the PP
+
+            # Receive the Secure Response from the PP
+
+            # Obtain the optimal score
+
             # Collect all private splitting info from the partners to find the optimal splitting candidates
             for partners in range(2, nprocs):   
+                
+                
+                
+                
                 rxSM = comm.recv(source = partners, tag = MSG_ID.RAW_SPLITTING_MATRIX)
 
                 # Find the optimal splitting score iff the splitting matrix is provided
