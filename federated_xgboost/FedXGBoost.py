@@ -5,6 +5,7 @@ from data_structure.DataBaseStructure import *
 from data_structure.TreeStructure import *
 from federated_xgboost.FedXGBoostTree import VerticalFedXGBoostTree
 from common.Common import PARTY_ID, logger, rank, clientNum
+from federated_xgboost.PerformanceLogger import PerformanceLogger 
 
 
 class FedXGBoostClassifier():
@@ -17,6 +18,7 @@ class FedXGBoostClassifier():
 
         self.dataBase = DataBase()
         self.label = []
+        self.performanceLogger = PerformanceLogger()
 
     def append_data(self, dataTable, fName = None):
         """
@@ -36,16 +38,20 @@ class FedXGBoostClassifier():
         print(ret)
 
     def boost(self):
-        # TODO: the data is passed in the method append data
         orgData = deepcopy(self.dataBase)
         y = self.label
         y_pred = np.zeros(np.shape(self.label))
-        
-        for i in range(self.nTree):     
+    
+        # Start federated boosting
+        tStartBoost = self.performanceLogger.log_start_boosting()
+        for i in range(self.nTree): 
+            tStartTree = PerformanceLogger.tic()    
             # Perform tree boosting
             dataFit = QuantiledDataBase(self.dataBase)
             self.trees[i].fit_fed(y, y_pred, i, dataFit)
+            self.performanceLogger.log_dt_tree(tStartTree) # Log the executed time
 
+            tStartPred = PerformanceLogger.tic()
             if i == self.nTree - 1: # The last tree, no need for prediction update.
                 continue
             else:
@@ -53,6 +59,10 @@ class FedXGBoostClassifier():
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
                 y_pred += update_pred
+            self.performanceLogger.log_dt_pred(tStartPred)
+
+        self.performanceLogger.log_end_boosting(tStartBoost)
+
 
     def predict(self, X, fName = None):
         y_pred = None

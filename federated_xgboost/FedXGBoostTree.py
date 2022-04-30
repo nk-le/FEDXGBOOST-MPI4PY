@@ -14,7 +14,8 @@ class FEDXGBOOST_MSGID:
     OPTIMAL_SPLITTING_INFO = 203
 
 def secure_response(privateX, U):
-    Z = U[:, np.random.randint(U.shape[1], size=2)]
+    r = np.random.randint(U.shape[1])
+    Z = U[:, np.random.randint(U.shape[1], size=r)]
     W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
     return np.matmul(W,privateX)
 

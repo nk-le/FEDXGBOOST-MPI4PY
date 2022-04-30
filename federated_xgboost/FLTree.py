@@ -14,6 +14,7 @@ class FLPlainXGBoostTree():
         self.root = FLTreeNode()
         self.nNode = 0
 
+
     def fit_fed(self, y, yPred, treeID, qDataBase: QuantiledDataBase):
         logger.info("Tree is growing column-wise. Current column: %d", treeID)
 

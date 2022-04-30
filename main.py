@@ -1,4 +1,5 @@
 from datetime import datetime
+from statistics import mode
 import pandas as pd
 import numpy as np
 from federated_xgboost.FedXGBoost import FedXGBoostClassifier
@@ -80,6 +81,7 @@ def test():
         #     print(y_test[i], y_pred[i], y_ori[i])
     pass
 
+    model.performanceLogger.print_info()
 
 
 
@@ -201,7 +203,7 @@ def main4():
         #     print(y_test[i], y_pred[i], y_ori[i])
     pass
 
-
+    model.performanceLogger.print_info()
 
 
 try:
