@@ -9,6 +9,7 @@ from common.Common import Direction, SplittingInfo, logger,rank
 
 class QuantileParam:
     epsilon = 0.02
+    thres_balance = 0.3
 
 class FeatureData:
     def __init__(self, name, dataVector) -> None:
@@ -64,7 +65,7 @@ class QuantiledFeature(FeatureData):
 
         # Khanh goes on from here, I need the splittingCandidates
         splittingCandidates = [split_list[i][1] for i in range(len(split_list))]
-        splittingMatrix = QuantiledFeature.generate_splitting_matrix(fData.data, splittingCandidates)
+        splittingMatrix, splittingCandidates = QuantiledFeature.generate_splitting_matrix(fData.data, splittingCandidates)
 
         # import matplotlib.pyplot as plt 
         # print(split_list)
@@ -83,12 +84,20 @@ class QuantiledFeature(FeatureData):
         assign 0 if the data value is smaller than the splitting candidates (left node)
         assign 1 if the data value is bigger than the splitting candidates (left node)
         """
-        splittingMatrix = []
+        outSM = []
+        outSC = []
         for i in range(len(splittingCandidates)):
             v =  1. * (dataVector > splittingCandidates[i])
-            splittingMatrix.append(v)
 
-        return np.array(splittingMatrix)
+            # Returns only the splitting option with balance between the amount of users in both nodes
+            nL = np.count_nonzero(v == 0.0)
+            nR = np.count_nonzero(v == 1.0)
+            isValid = (((nL/len(v)) > QuantileParam.thres_balance) and ((nR/len(v)) > QuantileParam.thres_balance))
+            if(isValid):
+                outSM.append(v)
+                outSC.append(splittingCandidates[i])
+
+        return np.array(outSM), np.array(outSC)
 
 
 class DataBase:
@@ -175,8 +184,10 @@ class QuantiledDataBase(DataBase):
             fSM, sc = self.featureDict[key].get_splitting_info()
             if not retMergedSM.size:
                 retMergedSM = fSM
+            # Append to the total splitting matrix if the quantiled is feasible
             else:
-                retMergedSM = np.concatenate((retMergedSM,fSM))  
+                if fSM.size:
+                    retMergedSM = np.concatenate((retMergedSM,fSM))  
         return retMergedSM
 
     def find_fId_and_scId(self, bestSplitVector):
@@ -186,9 +197,14 @@ class QuantiledDataBase(DataBase):
         for key, feature in self.featureDict.items():
             fSM, scArr = self.featureDict[key].get_splitting_info()
             for v, s in zip(fSM, scArr):
-                if(np.all(v == bestSplitVector)):
+                if(np.allclose(v, bestSplitVector)):
                     return key, s
+                if(rank == 3):
+                    logger.info("%s: %d", v, np.allclose(v, bestSplitVector))
 
+        logger.error("No matched splitting candidate.")
+        logger.error("Optimal splitting vector: %s", str(bestSplitVector))
+        logger.error("My splitting matrix: %s", str(self.get_merged_splitting_matrix()))
         assert(False)
 
 
@@ -217,8 +233,8 @@ class QuantiledDataBase(DataBase):
         return retL, retR
 
     def appendGradientsHessian(self, g, h):
-        self.gradVec = g
-        self.hessVec = h
+        self.gradVec = np.array(g).reshape(-1,1)
+        self.hessVec = np.array(h).reshape(-1,1)
 
 
 
