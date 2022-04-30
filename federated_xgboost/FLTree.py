@@ -82,7 +82,8 @@ class FLPlainXGBoostTree():
                         "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
                         "\nSplitting Score: {}".format(L.T))       
                     
-                    maxScore, bestSplitId = FLPlainXGBoostTree.get_max_score(L, rxSM)
+                    bestSplitId = np.argmax(L)
+                    maxScore = L[bestSplitId]
 
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
@@ -285,25 +286,30 @@ class FLPlainXGBoostTree():
     
 
     def get_max_score(L: list, rxSM):
+        """
+        This method is no longer needed since the passive parties will propose only the splitting options with balance
+        """
         # Optimal candidate of 1 partner party
         # Select the optimal candidates without all zeros or one elements of the splitting)
-        isValid = False
-        excId = np.zeros(L.size, dtype=bool)
-        for id in range(len(L)):
-            splitVector = rxSM[id, :]
-            nL = np.count_nonzero(splitVector == 0.0)
-            nR = np.count_nonzero(splitVector == 1.0)
-            thres = 0.1 # TODO: bring this value outside as parameters 
-            isValid = (((nL/len(splitVector)) > thres) and ((nR/len(splitVector)) > thres))
-            #print(nL, nR, len(splitVector), isValid)
-            if not isValid:
-                excId[id] = True
+        # isValid = False
+        # excId = np.zeros(L.size, dtype=bool)
+        # for id in range(len(L)):
+        #     splitVector = rxSM[id, :]
+        #     nL = np.count_nonzero(splitVector == 0.0)
+        #     nR = np.count_nonzero(splitVector == 1.0)
+        #     thres = 0.1 # TODO: bring this value outside as parameters 
+        #     isValid = (((nL/len(splitVector)) > thres) and ((nR/len(splitVector)) > thres))
+        #     #print(nL, nR, len(splitVector), isValid)
+        #     if not isValid:
+        #         excId[id] = True
 
         # Mask the exception index to avoid strong imbalance between each node's users ratio     
-        tmpL = np.ma.array(L, mask=excId) 
-        bestSplitId = np.argmax(tmpL)
-        maxScore = tmpL[bestSplitId]     
-        return maxScore, bestSplitId
+        # tmpL = np.ma.array(L, mask=excId) 
+        # bestSplitId = np.argmax(tmpL)
+        # maxScore = tmpL[bestSplitId]     
+        # return maxScore, bestSplitId
+        pass
+
 
 
 
