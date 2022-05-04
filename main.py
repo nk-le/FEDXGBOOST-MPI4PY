@@ -25,7 +25,6 @@ def test_iris(model):
     X_test_B = X_test[:, 2].reshape(-1, 1)
     X_test_C = X_test[:, 1].reshape(-1, 1)
     X_test_D = X_test[:, 3].reshape(-1, 1)
-    model = FedXGBoostClassifier()
 
     if rank == 1:
         model.append_data(X_train_A, fNameA)
@@ -45,13 +44,8 @@ def test_iris(model):
         model.append_label(np.zeros_like(y_train))
 
     model.print_info()
-
-
     model.boost()
     
-    # b = FLVisNode(model.trees)
-    # b.display()
-
     if rank == 1:
         y_pred = model.predict(X_test_A, fNameA)
     elif rank == 2:
@@ -169,7 +163,9 @@ try:
     import logging
 
     logger.setLevel(logging.INFO)
-    test_fedxgboost_iris()
+    #test_fedxgboost_iris()
+
+    test_secureboost_iris()
     
 
 except Exception as e:

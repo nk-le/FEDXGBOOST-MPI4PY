@@ -16,6 +16,7 @@ print("2. Encrypting integers with encryptInt")
 integer1 = 94
 integer2 = -235
 ctxt_i1 = HE.encryptInt(integer1)   # Encrypting integer1 in a new PyCtxt with encryptInt
+print(type(ctxt_i1))
 ctxt_i2 = PyCtxt()                  # Empty ciphertexts have no encoding type.
 print("    Empty created ctxt_i2: ",   str(ctxt_i2))
 HE.encryptInt(integer2, ctxt_i2)    # Encrypting integer2 in an existing PyCtxt
@@ -52,6 +53,7 @@ print("    array ",array2,'-> ctxt_a2 ', str(ctxt_a2))
 
 print("6. Operations in the encrypted domain")
 ctxt_iadd = ctxt_i1 + ctxt_i2     # `ctxt_i1 += ctxt_i2` for quicker inplace operation
+print(type(ctxt_iadd))
 ctxt_isub = ctxt_i1 - ctxt_i2     # `ctxt_i1 -= ctxt_i2` for quicker inplace operation
 ctxt_imul = ctxt_i1 * ctxt_i2     # `ctxt_i1 *= ctxt_i2` for quicker inplace operation
 

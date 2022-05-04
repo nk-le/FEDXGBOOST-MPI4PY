@@ -1,4 +1,5 @@
 from copy import deepcopy
+import pyclbr
 import numpy as np
 from scipy.linalg import null_space
 from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
@@ -40,7 +41,7 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
         super().__init__(param)
 
         self.HEHandler = Pyfhel()  
-        self.HEHandler.contextGen(p=65537, m=2048, base=3, flagBatching=True)   # Generating context. 
+        self.HEHandler.contextGen(p=65537, m=1024, base=3, flagBatching=True)   # Generating context. 
         self.HEHandler.keyGen()
 
     # Child class declares the privacy optimal split finding
@@ -51,20 +52,20 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
             
         if rank == PARTY_ID.ACTIVE_PARTY:
             # Encrypt the gradient and the hessians
-            encGArr = np.zeros_like(qDataBase.gradVec, dtype=float)
-            encHArr = np.zeros_like(qDataBase.hessVec, dtype=float)
+            encGArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
+            encHArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
             for i in range((qDataBase.nUsers)):
                 encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
                 encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
-                
-            logger.info("Encrypted the private gradients [G, H])")
-            logger.debug("Encrypted Gradient: %s", str(encGArr.T))
-            logger.debug("Encrypted Hessians: %s", str(encHArr.T))
             
+            print("MF", encGArr[0] + encGArr[1])
+            logger.info("Encrypted the private gradients [G, H])")
+            #logger.debug("Encrypted Gradient: %s", str(encGArr.T))
+            #logger.debug("Encrypted Hessians: %s", str(encHArr.T))
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
-                status = comm.send(encGArr, dest = partners, tag = SECUREBOOST_MSGID.ENCRYP_GRADIENT)
-                status = comm.send(encHArr, dest = partners, tag = SECUREBOOST_MSGID.ENCRYP_HESSIAN)
+                status = comm.send(encGArr[0], dest = partners, tag = SECUREBOOST_MSGID.ENCRYP_GRADIENT)
+                status = comm.send(encHArr[0], dest = partners, tag = SECUREBOOST_MSGID.ENCRYP_HESSIAN)
 
                 # Receive the Secure Response from the PP
                 rxGL = comm.recv(source=partners, tag = SECUREBOOST_MSGID.ENCRYP_AGGR_GL)
@@ -110,20 +111,28 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
 
             # Receive the secured kernel
             encrG = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.ENCRYP_GRADIENT)
-            encrH = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.ENCRYP_HESSIAN)
-            logger.warning("Received the encrypted data from the active party")
+            #print(str(encrG))
 
+
+            encrH = comm.recv(bytearray(), source=PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.ENCRYP_HESSIAN)
+            print("RxMF", str(encrG), str(encrH))
+
+            logger.warning("Received the encrypted data from the active party")
             # Aggregate the results and send to the active party
             nCandidates = privateSM.shape[0] # TODO: define a method in database class to get the amount of splititng options
-            aggGL = np.zeros((nCandidates, 1))
-            aggHL = np.zeros((nCandidates, 1))
+            aggGL = [] #[PyCtxt() for i in range(nCandidates)]
+            aggHL = [] # for i in range(nCandidates)]
             if(privateSM.size):
                 # Accumulate the encrypted gradients and hessians of the left node for all possible splititing candidates
                 for sc in range(nCandidates):
-                    for userIndex in range(qDataBase.nUsers):
-                        if(privateSM[sc, userIndex] == 0.0):
-                            aggGL[sc] += encrG[userIndex]
-                            aggHL[sc] += encrH[userIndex]
+                    # for userIndex in range(qDataBase.nUsers):
+                    #     if(privateSM[sc, userIndex] == 0.0):
+                    #         aggGL[sc] += encrG[userIndex]
+                    #         aggHL[sc] += encrH[userIndex]
+                    #aggGL.append(Pyfhel.add(encrG[0] + encrG[1]))
+                    #print(type(encrH[0]), type(encrH[1]))
+                    #aggHL.append(encrH[0] + encrH[1])
+                    pass
 
                 logger.warning("Sent the encrypted aggregate data to the active party")
             else:
