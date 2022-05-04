@@ -28,7 +28,8 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         # Start finding the optimal candidate federatedly
         nprocs = comm.Get_size()
         sInfo = SplittingInfo()
-            
+        privateSM = np.array([])
+
         if rank == PARTY_ID.ACTIVE_PARTY:
             # Perform the QR Decomposition
             matGH = np.concatenate((qDataBase.gradVec, qDataBase.hessVec), axis=1)
@@ -57,7 +58,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                     sumHRVec = np.matmul(rxSR, qDataBase.hessVec).reshape(-1)
                     sumGLVec = sum(qDataBase.gradVec) - sumGRVec
                     sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec, 0.01)
+                    L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
                     logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
                         "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
                         "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
@@ -76,7 +77,6 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
-            #logger.info("Sent splitting info to clients {}".format(sInfo.bestSplitParty))
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
@@ -101,26 +101,9 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)            
             logger.warning("Received the Splitting Info from the active party") 
         
-        # Set the optimal split as the owner ID of the current tree node
-        # If the selected party is me
-        if(rank == sInfo.bestSplitParty):
-            sInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
-            feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
-
-            updateSInfo = deepcopy(sInfo)
-            updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
-            for partners in range(1, nprocs):
-                if(partners != rank): # only send to the other parties
-                    status = comm.send(updateSInfo, dest=partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_INFO)
-
-            # Only the selected rank has these information so it saves for itself
-            sInfo.featureName = feature
-            sInfo.splitValue = value
-
-        # The other parties receive the final splitting info to construct the tree node
-        elif(rank != 0):
-            sInfo = comm.recv(source = sInfo.bestSplitParty, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_INFO)
-
+            
+        # Post processing, final announcement (optimal splitting vector)
+        sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         return sInfo
 
 

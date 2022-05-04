@@ -210,9 +210,9 @@ try:
     import logging
 
     logger.setLevel(logging.INFO)
-    #test()
+    test()
     
-    main4()
+    #main4()
 
     
 

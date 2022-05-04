@@ -4,6 +4,7 @@ from algo.LossFunction import LeastSquareLoss, LogLoss
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
 from visualizer.TreeRender import FLVisNode
+from copy import deepcopy
 
 
 from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitting_score
@@ -91,12 +92,10 @@ class FLPlainXGBoostTree():
                         sInfo.bestSplitScore = maxScore
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
-                        sInfo.bestSplittingVector = rxSM[bestSplitId, :]
+                        #sInfo.bestSplittingVector = rxSM[bestSplitId, :]
                                 
             # Build Tree from the feature with the optimal index
-            for partners in range(2, nprocs):
-                data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
-                logger.info("Sent splitting info to clients {}".format(partners))
+            self.fed_finalize_optimal_finding(sInfo, qDataBase)
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
@@ -109,17 +108,40 @@ class FLPlainXGBoostTree():
             txSM = comm.send(privateSM, dest = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.RAW_SPLITTING_MATRIX)
             logger.warning("Sent the splitting matrix to the active party")         
 
-            sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
-            logger.warning("Received the Splitting Info from the active party") 
+            # sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
+            # logger.warning("Received the Splitting Info from the active party") 
 
 
-        # Post processing the splitting information before returning
+            # Post processing the splitting information before returning
+            # Set the optimal split as the owner ID of the current tree node
+            # If the selected party is me     
+            self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
+        
+        return sInfo
+
+
+    def fed_finalize_optimal_finding(self, sInfo: SplittingInfo, qDataBase: QuantiledDataBase, privateSM = np.array([])):
         # Set the optimal split as the owner ID of the current tree node
         # If the selected party is me
+        # TODO: Considers implement this generic --> direct in the grow method as post processing?
         if(rank == sInfo.bestSplitParty):
+            sInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
             feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
+
+            updateSInfo = deepcopy(sInfo)
+            updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
+            nprocs = comm.Get_size()
+            for partners in range(1, nprocs):
+                if(partners != rank): # only send to the other parties
+                    status = comm.send(updateSInfo, dest=partners, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
+
+            # Only the selected rank has these information so it saves for itself
             sInfo.featureName = feature
             sInfo.splitValue = value
+
+        # The other parties receive the final splitting info to construct the tree node
+        elif(rank != 0):
+            sInfo = comm.recv(source = sInfo.bestSplitParty, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
         
         return sInfo
 
