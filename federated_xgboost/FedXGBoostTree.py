@@ -5,7 +5,7 @@ from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
-from federated_xgboost.FLTree import FLPlainXGBoostTree
+from federated_xgboost.FLTree import FLXGBoostClassifierBase, FLPlainXGBoostTree
 
 class FEDXGBOOST_MSGID:
     SECURE_KERNEL = 200
@@ -18,6 +18,20 @@ def secure_response(privateX, U):
     Z = U[:, np.random.randint(U.shape[1], size=r)]
     W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
     return np.matmul(W,privateX)
+
+
+
+class FedXGBoostClassifier(FLXGBoostClassifierBase):
+    def __init__(self):
+        super().__init__()
+        
+
+    def assign_tree(self, nTree = 3):
+        trees = []
+        for _ in range(self.nTree):
+            tree = VerticalFedXGBoostTree()
+            trees.append(tree)
+        return trees
 
 class VerticalFedXGBoostTree(FLPlainXGBoostTree):
     def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):

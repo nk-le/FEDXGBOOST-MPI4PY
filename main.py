@@ -2,24 +2,16 @@ from datetime import datetime
 from statistics import mode
 import pandas as pd
 import numpy as np
-from federated_xgboost.FedXGBoost import FedXGBoostClassifier
+from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
 from common.Common import rank, logger
+from federated_xgboost.SecureBoostTree import SecureBoostClassifier
 
-def test():
-    data = pd.read_csv('./dataset/iris.csv').values
+from data_preprocessing import *
 
-    zero_index = data[:, -1] == 0
-    one_index = data[:, -1] == 1
-    zero_data = data[zero_index]
-    one_data = data[one_index]
-    train_size_zero = int(zero_data.shape[0] * 0.8)
-    train_size_one = int(one_data.shape[0] * 0.8)
-    X_train, X_test = np.concatenate((zero_data[:train_size_zero, :-1], one_data[:train_size_one, :-1]), 0), \
-                      np.concatenate((zero_data[train_size_zero:, :-1], one_data[train_size_one:, :-1]), 0)
-    y_train, y_test = np.concatenate((zero_data[:train_size_zero, -1].reshape(-1,1), one_data[:train_size_one, -1].reshape(-1, 1)), 0), \
-                      np.concatenate((zero_data[train_size_zero:, -1].reshape(-1, 1), one_data[train_size_one:, -1].reshape(-1, 1)), 0)
 
-    fName = [['sepal length'],['sepal width'],['pedal length'],['pedal width']]
+def test_iris(model):
+    X_train, y_train, X_test, y_test, fName = get_iris()
+
     X_train_A = X_train[:, 0].reshape(-1, 1)
     fNameA = fName[0]
 
@@ -33,7 +25,7 @@ def test():
     X_test_B = X_test[:, 2].reshape(-1, 1)
     X_test_C = X_test[:, 1].reshape(-1, 1)
     X_test_D = X_test[:, 3].reshape(-1, 1)
-    model = FedXGBoostClassifier(3)
+    model = FedXGBoostClassifier()
 
     if rank == 1:
         model.append_data(X_train_A, fNameA)
@@ -84,55 +76,8 @@ def test():
     model.performanceLogger.print_info()
 
 
-
-
-def main4():
-
-    #data = pd.read_csv('./GiveMeSomeCredit/cs-training.csv')
-    data = pd.read_csv('./dataset/GiveMeSomeCredit/cs-training-small.csv')
-    data.dropna(inplace=True)
-    fName = ['SeriousDlqin2yrs',
-       'RevolvingUtilizationOfUnsecuredLines', 'age',
-       'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome',
-       'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate',
-       'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse',
-       'NumberOfDependents']
-
-    
-    data = data[fName].values
-    ori_data = data.copy()
-    # Add features
-    # for i in range(1):
-    #     data = np.concatenate((data, ori_data[:, 1:]), axis=1)
-
-    # Normalize the data
-    data = data / data.max(axis=0)
-
-    ratio = 10000 / data.shape[0]
-
-    zero_index = data[:, 0] == 0
-    one_index = data[:, 0] == 1
-    zero_data = data[zero_index]
-    one_data = data[one_index]
-    zero_ratio = len(zero_data) / data.shape[0]
-    one_ratio = len(one_data) / data.shape[0]
-    num = 7500
-    train_size_zero = int(zero_data.shape[0] * ratio) + 1
-    train_size_one = int(one_data.shape[0] * ratio)
-    X_train, X_test = np.concatenate((zero_data[:train_size_zero, 1:], one_data[:train_size_one, 1:]), 0), \
-                      np.concatenate((zero_data[train_size_zero:train_size_zero+int(num * zero_ratio)+1, 1:], one_data[train_size_one:train_size_one+int(num * one_ratio), 1:]), 0)
-    y_train, y_test = np.concatenate(
-        (zero_data[:train_size_zero, 0].reshape(-1, 1), one_data[:train_size_one, 0].reshape(-1, 1)), 0), \
-                      np.concatenate((zero_data[train_size_zero:train_size_zero+int(num * zero_ratio)+1, 0].reshape(-1, 1),
-                                      one_data[train_size_one:train_size_one+int(num * one_ratio), 0].reshape(-1, 1)), 0)
-
-
-
-    fName = ['RevolvingUtilizationOfUnsecuredLines', 'age',
-       'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome',
-       'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate',
-       'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse',
-       'NumberOfDependents']
+def test_give_me_credits(model):
+    X_train, y_train, X_test, y_test, fName = get_give_me_credits()
 
     X_train_A = X_train[:, :2]
     fNameA = fName[:2]
@@ -153,9 +98,6 @@ def main4():
     X_test_C = X_test[:, 4:7]
     X_test_D = X_test[:, 7:]
 
-    model = FedXGBoostClassifier(3)
-
-    start = datetime.now()
      # np.concatenate((X_train_A, y_train))
     if rank == 1:
         #print("Test A", len(X_train_A), len(X_train_A[0]), len(y_train), len(y_train[0]))
@@ -206,14 +148,28 @@ def main4():
     model.performanceLogger.print_info()
 
 
+
+def test_fedxgboost_iris():
+    model = FedXGBoostClassifier()
+    test_iris(model)
+
+def test_fedxgboost_gmc():
+    model = FedXGBoostClassifier()
+    test_give_me_credits(model)
+
+def test_secureboost_iris():
+    model = SecureBoostClassifier()
+    test_iris(model)
+
+def test_secureboost_gmc():
+    model = SecureBoostClassifier()
+    test_give_me_credits(model)
+
 try:
     import logging
 
     logger.setLevel(logging.INFO)
-    test()
-    
-    #main4()
-
+    test_fedxgboost_iris()
     
 
 except Exception as e:

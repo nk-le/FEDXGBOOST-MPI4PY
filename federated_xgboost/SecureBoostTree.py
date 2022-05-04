@@ -5,7 +5,7 @@ from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, get_splitting_score, XgboostLearningParam
-from federated_xgboost.FLTree import FLPlainXGBoostTree
+from federated_xgboost.FLTree import FLPlainXGBoostTree, FLXGBoostClassifierBase
 
 # Addthe external package for homomorphic encryption scheme
 from Pyfhel import Pyfhel, PyPtxt, PyCtxt
@@ -17,6 +17,19 @@ class SECUREBOOST_MSGID:
     ENCRYP_AGGR_HL = 103
     OPTIMAL_SPLITTING_SELECTION = 104
     OPTIMAL_SPLITTING_INFO = 105
+
+
+class SecureBoostClassifier(FLXGBoostClassifierBase):
+    def __init__(self):
+        super().__init__()
+        
+
+    def assign_tree(self, nTree = 3):
+        trees = []
+        for _ in range(self.nTree):
+            tree = VerticalSecureBoostTree()
+            trees.append(tree)
+        return trees
 
 
 class VerticalSecureBoostTree(FLPlainXGBoostTree):
@@ -40,7 +53,7 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
             # Encrypt the gradient and the hessians
             encGArr = np.zeros_like(qDataBase.gradVec, dtype=float)
             encHArr = np.zeros_like(qDataBase.hessVec, dtype=float)
-            for i in range(len(qDataBase.nUsers)):
+            for i in range((qDataBase.nUsers)):
                 encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
                 encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
                 
@@ -122,8 +135,6 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
             # Receive the optimal splitting information
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)            
             logger.warning("Received the Splitting Info from the active party") 
-        
-        
         
         sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         return sInfo
