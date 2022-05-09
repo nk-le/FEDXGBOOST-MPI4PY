@@ -131,25 +131,24 @@ def test_give_me_credits(model):
 def test_default_credit_client(model):
     X_train, y_train, X_test, y_test, fName = get_default_credit_client()
 
-    X_train_A = X_train[:, 0:2]
-    fNameA = fName[0:2]
+    X_train_A = X_train[:, 0:6]
+    fNameA = fName[0:6]
+    X_test_A = X_test[:, 0:6]
 
-    X_train_B = X_train[:, 2:5]
-    fNameB = fName[2:5]
+    X_train_B = X_train[:, 6:11]
+    fNameB = fName[6:11]
+    X_test_B = X_test[:, 6:11]
 
-    X_train_C = X_train[:, 5:14]
-    fNameC = fName[5:14]
+    X_train_C = X_train[:, 11:18]
+    fNameC = fName[11:18]
+    X_test_C = X_test[:, 11:18]
 
-    X_train_D = X_train[:, 14:]
-    fNameD = fName[14:]
-
-    X_test_A = X_test[:, 0:2]
-    X_test_B = X_test[:, 2:5]
-    X_test_C = X_test[:, 5:14]
-    X_test_D = X_test[:, 14:]
+    X_train_D = X_train[:, 19:]
+    fNameD = fName[19:]
+    X_test_D = X_test[:, 19:]
 
     if rank == 1:
-        model.append_data(X_train_A)
+        model.append_data(X_train_A, fNameA)
         model.append_label(y_train)
     elif rank == 2:
         #print("Test", len(X_train_B), len(X_train_B[0]), len(y_train), len(y_train[0]))
@@ -244,8 +243,8 @@ try:
 
     # Model selection
     #model = SecureBoostClassifier()
-    #model = FedXGBoostClassifier()
-    model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
+    model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
+    #model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
 
     # Dataset selection    
     if rank != 0:

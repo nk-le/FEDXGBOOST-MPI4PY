@@ -276,14 +276,12 @@ class FLPlainXGBoostTree():
                 endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
                 currentNode.weight = endNode.weight
 
-                logger.warning("Reached max-depth or Gain is negative. Terminate the tree growing,\
-                     generate the leaf with weight Leaf Weight: %f", currentNode.weight)
+                logger.warning("Reached max-depth or Gain is negative. Terminate the tree growing, generate the leaf with weight Leaf Weight: %f", currentNode.weight)
         else:
             endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
             currentNode.weight = endNode.weight
 
-            logger.warning("Splitting candidate is not feasible. Terminate the tree growing,\
-                    generate the leaf with weight Leaf Weight: %f", currentNode.weight)
+            logger.warning("Splitting candidate is not feasible. Terminate the tree growing and generate the leaf with weight Leaf Weight: %f", currentNode.weight)
             
         # Post processing
         # Remove the feature for the next iteration because this is already used
@@ -345,7 +343,6 @@ class FLPlainXGBoostTree():
             # Iterate until we find the right leaf node  
             while(not curNode.is_leaf()):    
                 if(curNode.owner is PARTY_ID.ACTIVE_PARTY): # If it is me, just find the sub node myself  
-                    print("Here") 
                     direction = \
                     (database.featureDict[curNode.splittingInfo.featureName].data[userId] > curNode.splittingInfo.splitValue)
                     if(direction == Direction.LEFT):
@@ -382,12 +379,8 @@ class FLPlainXGBoostTree():
                 rxReqData = comm.recv(source = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.REQUEST_DIRECTION)
                 userClassified = rxReqData.userIdList
                 rxReqData.log()
-                fedNodePtr = self.root.find_child_node(rxReqData.nodeFedId)
                 # Find the node and verify that it exists 
-                if fedNodePtr:
-                    #fedNodePtr.splittingInfo.log()
-                    #print(userClassified)
-                    pass
+                fedNodePtr = self.root.find_child_node(rxReqData.nodeFedId)                
                 # Classify the user according to the current node
                 rep = FedDirResponseInfo(userClassified)
                 # Reply the direction 

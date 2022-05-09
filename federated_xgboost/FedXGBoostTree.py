@@ -22,8 +22,12 @@ def secure_response(privateX, U):
 
 
 class FedXGBoostClassifier(FLXGBoostClassifierBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, nTree = 3):
+        trees = []
+        for _ in range(nTree):
+            tree = FLPlainXGBoostTree()
+            trees.append(tree)
+        super().__init__(trees)
         
 
     def assign_tree(self, nTree = 3):

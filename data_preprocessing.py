@@ -86,7 +86,7 @@ def get_default_credit_client():
     data = data / data.max(axis=0)
 
     # Get the ratio of the dataset used for training
-    ratio = 1/3
+    ratio = 2/3
 
     zero_index = data[:, -1] == 0
     one_index = data[:, -1] == 1
