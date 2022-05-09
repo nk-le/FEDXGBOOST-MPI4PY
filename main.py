@@ -250,9 +250,9 @@ try:
     # Dataset selection    
     if rank != 0:
         #y_pred, y_test, model = test_default_credit_client(model)
-        y_pred, y_test, model = test_give_me_credits(model)
+        #y_pred, y_test, model = test_give_me_credits(model)
         #y_pred, y_test, model = test_iris(model)
-        #y_pred, y_test, model = test_adult(model)
+        y_pred, y_test, model = test_adult(model)
         y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
             y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
@@ -265,7 +265,7 @@ try:
             strPred = ""
             for i in range(len(y_pred)):
                 strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
-            logger.info("Pred: %s", str(strPred))
+            logger.debug("Pred: %s", str(strPred))
             
             auc = metrics.roc_auc_score(y_test, y_pred_true)
             print("AUC", auc)

@@ -11,7 +11,7 @@ class XgboostLearningParam:
     LAMBDA = 1
     GAMMA = 0.5
     N_TREES = 10
-    MAX_DEPTH = 3
+    MAX_DEPTH = 4
 
 def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):
     G = sum(GVec)
@@ -21,7 +21,10 @@ def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, 
     GLVec = G - GRVec
     HLVec = H - HRVec
     score = L(G,H,GLVec,GRVec,HLVec,HRVec,lamb, gamma)
-    return score.reshape(-1)
+
+    bestSplitId = np.argmax(score)
+    maxScore = score[bestSplitId]
+    return score.reshape(-1), maxScore, bestSplitId
 
 def get_splitting_score(G, H, GL, GR, HL, HR, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):
     score = L(G,H,GL,GR,HL,HR,lamb, gamma)

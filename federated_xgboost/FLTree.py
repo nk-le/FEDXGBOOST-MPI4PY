@@ -116,18 +116,9 @@ class FLPlainXGBoostTree():
             logger.info("Computed Gradients and Hessians ")
             logger.debug("G {}".format(' '.join(map(str, G))))
             logger.debug("H {}".format(' '.join(map(str, H))))
-
-            # nprocs = comm.Get_size()
-            # for partners in range(2, nprocs):   
-            #     data = comm.send(G, dest = partners, tag = MSG_ID.MASKED_GH)
-            #     logger.info("Sent G, H to party %d", partners)         
-
             qDataBase.appendGradientsHessian(G, H) 
 
         else:
-            # data = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag=MSG_ID.MASKED_GH)
-            # logger.info("Received G, H from the active party")
-
             dummyG = np.zeros((qDataBase.nUsers,1))
             dummyH = np.zeros((qDataBase.nUsers,1))
             qDataBase.appendGradientsHessian(dummyG, dummyH)
@@ -147,12 +138,38 @@ class FLPlainXGBoostTree():
         return ret
 
     # This method requires normally the highest privacy concern
+    def get_optimal_split_score(self, gVec, hVec, sm):
+        sumGRVec = np.matmul(sm, gVec).reshape(-1)
+        sumHRVec = np.matmul(sm, hVec.hessVec).reshape(-1)
+        sumGLVec = sum(gVec) - sumGRVec
+        sumHLVec = sum(hVec) - sumHRVec
+        L = compute_splitting_score(sm, gVECc, h)
+                
+        logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
+            "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
+            "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
+            "\nSplitting Score: {}".format(L.T))       
+        
+        bestSplitId = np.argmax(L)
+        maxScore = L[bestSplitId]
+
+        return maxScore, bestSplitId
+    
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
-        privateSM = np.array([])
+        # Each party studies their own user's distribution and prepare the splitting matrix
+        privateSM = qDataBase.get_merged_splitting_matrix()
 
         # Start finding the optimal candidate federatedly
         if rank == PARTY_ID.ACTIVE_PARTY:
             sInfo = SplittingInfo()
+            if privateSM.size: # check it own candidate
+                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
+                if(maxScore > 0):
+                    sInfo.isValid = True
+                    sInfo.bestSplitParty = PARTY_ID.ACTIVE_PARTY
+                    sInfo.selectedCandidate = bestSplitId
+                    sInfo.bestSplitScore = maxScore
+            
             nprocs = comm.Get_size()
             # Collect all private splitting info from the partners to find the optimal splitting candidates
             for partners in range(2, nprocs):   
@@ -160,26 +177,12 @@ class FLPlainXGBoostTree():
 
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:
-                    sumGRVec = np.matmul(rxSM, qDataBase.gradVec).reshape(-1)
-                    sumHRVec = np.matmul(rxSM, qDataBase.hessVec).reshape(-1)
-                    sumGLVec = sum(qDataBase.gradVec) - sumGRVec
-                    sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    L = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec)
-                
-                    logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
-                        "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
-                        "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
-                        "\nSplitting Score: {}".format(L.T))       
-                    
-                    bestSplitId = np.argmax(L)
-                    maxScore = L[bestSplitId]
-
+                    score, maxScore, bestSplitId = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec)
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
-                        sInfo.bestSplittingVector = None
                         sInfo.isValid = True
                                 
             # Build Tree from the feature with the optimal index
@@ -190,7 +193,7 @@ class FLPlainXGBoostTree():
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
             # qDataBase.printInfo()
-            privateSM = qDataBase.get_merged_splitting_matrix()
+            
             logger.info("Merged splitting options from all features and obtain the private splitting matrix with shape of {}".format(str(privateSM.shape)))
             logger.debug("Value of the private splitting matrix is \n{}".format(str(privateSM))) 
 
@@ -214,7 +217,6 @@ class FLPlainXGBoostTree():
 
 
     def fed_finalize_optimal_finding(self, sInfo: SplittingInfo, qDataBase: QuantiledDataBase, privateSM = np.array([])):
-        sInfo.log()
         # Set the optimal split as the owner ID of the current tree node
         # If the selected party is me
         # TODO: Considers implement this generic --> direct in the grow method as post processing?
@@ -223,8 +225,6 @@ class FLPlainXGBoostTree():
             feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
 
             updateSInfo = deepcopy(sInfo)
-            logger.info("Info of the copied version")
-            updateSInfo.log()
             updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
             nprocs = comm.Get_size()
             for partners in range(1, nprocs):
@@ -343,24 +343,33 @@ class FLPlainXGBoostTree():
             # Initialize searching from the root
             curNode = self.root
             # Iterate until we find the right leaf node  
-            while(not curNode.is_leaf()):                
-                # Federate finding the direction for the next node
-                req = FedDirRequestInfo(userId)
-                req.nodeFedId = curNode.FID
-                
-                logger.debug("Sent the direction request to all partner party")
-                status = comm.send(req, dest = curNode.owner, tag = MSG_ID.REQUEST_DIRECTION)
-                
-                # Receive the response
-                logger.debug("Waiting for the direction response from party %d.", curNode.owner)
-                dirResp = comm.recv(source = curNode.owner, tag = MSG_ID.RESPONSE_DIRECTION)
+            while(not curNode.is_leaf()):    
+                if(curNode.owner is PARTY_ID.ACTIVE_PARTY): # If it is me, just find the sub node myself  
+                    print("Here") 
+                    direction = \
+                    (database.featureDict[curNode.splittingInfo.featureName].data[userId] > curNode.splittingInfo.splitValue)
+                    if(direction == Direction.LEFT):
+                        curNode =curNode.leftBranch
+                    elif(direction == Direction.RIGHT):
+                        curNode = curNode.rightBranch
+                else:         
+                    # Federate finding the direction for the next node
+                    req = FedDirRequestInfo(userId)
+                    req.nodeFedId = curNode.FID
+                    
+                    logger.debug("Sent the direction request to all partner party")
+                    status = comm.send(req, dest = curNode.owner, tag = MSG_ID.REQUEST_DIRECTION)
+                    
+                    # Receive the response
+                    logger.debug("Waiting for the direction response from party %d.", curNode.owner)
+                    dirResp = comm.recv(source = curNode.owner, tag = MSG_ID.RESPONSE_DIRECTION)
 
-                logger.debug("Received the classification info from party %d", curNode.owner)
-                logger.debug("User ID: %d| Direction: %s", (userId), str(dirResp.Direction))
-                if(dirResp.Direction == Direction.LEFT):
-                    curNode =curNode.leftBranch
-                elif(dirResp.Direction == Direction.RIGHT):
-                    curNode = curNode.rightBranch
+                    logger.debug("Received the classification info from party %d", curNode.owner)
+                    logger.debug("User ID: %d| Direction: %s", (userId), str(dirResp.Direction))
+                    if(dirResp.Direction == Direction.LEFT):
+                        curNode =curNode.leftBranch
+                    elif(dirResp.Direction == Direction.RIGHT):
+                        curNode = curNode.rightBranch
 
             # Return the weight of the terminated tree leaf
             return curNode.weight
