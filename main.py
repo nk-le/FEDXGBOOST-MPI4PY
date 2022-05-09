@@ -3,7 +3,7 @@ from statistics import mode
 import pandas as pd
 import numpy as np
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
-from common.Common import rank, logger
+from common.Common import PARTY_ID, rank, logger
 from federated_xgboost.SecureBoostTree import SecureBoostClassifier
 
 from data_preprocessing import *
@@ -57,18 +57,9 @@ def test_iris(model):
     else:
         model.predict(np.zeros_like(X_test_A))
 
-    if rank == 1:
-        y_pred = 1.0 / (1.0 + np.exp(-y_pred))
-        y_pred[y_pred > 0.5] = 1
-        y_pred[y_pred <= 0.5] = 0
-        result = y_pred - y_test
-        print(np.sum(result == 0) / y_pred.shape[0])
-        # for i in range(y_test.shape[0]):
-        #     print(y_test[i], y_pred[i], y_ori[i])
-    pass
+    y_pred_org = y_pred.copy()
 
-    model.performanceLogger.print_info()
-
+    return y_pred_org, y_test, model
 
 def test_give_me_credits(model):
     X_train, y_train, X_test, y_test, fName = get_give_me_credits()
@@ -129,45 +120,98 @@ def test_give_me_credits(model):
     else:
         model.predict(np.zeros_like(X_test_A))
 
+    y_pred_org = y_pred.copy()
+   
+    return y_pred_org, y_test, model
+
+
+def test_default_credit_client(model):
+    X_train, y_train, X_test, y_test, fName = get_default_credit_client()
+
+    X_train_A = X_train[:, 0:2]
+    fNameA = fName[0:2]
+
+    X_train_B = X_train[:, 2:5]
+    fNameB = fName[2:5]
+
+    X_train_C = X_train[:, 5:14]
+    fNameC = fName[5:14]
+
+    X_train_D = X_train[:, 14:]
+    fNameD = fName[14:]
+
+    X_test_A = X_test[:, 0:2]
+    X_test_B = X_test[:, 2:5]
+    X_test_C = X_test[:, 5:14]
+    X_test_D = X_test[:, 14:]
+
     if rank == 1:
-        y_pred = 1.0 / (1.0 + np.exp(-y_pred))
-        y_pred[y_pred > 0.5] = 1
-        y_pred[y_pred <= 0.5] = 0
-        result = y_pred - y_test
-        print(np.sum(result == 0) / y_pred.shape[0])
-        # for i in range(y_test.shape[0]):
-        #     print(y_test[i], y_pred[i], y_ori[i])
-    pass
+        model.append_data(X_train_A)
+        model.append_label(y_train)
+    elif rank == 2:
+        #print("Test", len(X_train_B), len(X_train_B[0]), len(y_train), len(y_train[0]))
+        model.append_data(X_train_B, fNameB)
+        model.append_label(np.zeros_like(y_train))
+    elif rank == 3:
+        model.append_data(X_train_C, fNameC)
+        model.append_label(np.zeros_like(y_train))
+    elif rank == 4:
+        model.append_data(X_train_D, fNameD)
+        model.append_label(np.zeros_like(y_train))
+    else:
+        model.append_data(X_train_A)
+        model.append_label(np.zeros_like(y_train))
 
-    model.performanceLogger.print_info()
 
+    model.print_info()
+    model.boost()
 
+    if rank == 1:
+        y_pred = model.predict(X_test_A, fNameA)
+    elif rank == 2:
+        y_pred = model.predict(X_test_B, fNameB)
+    elif rank == 3:
+        y_pred = model.predict(X_test_C, fNameC)
+    elif rank == 4:
+        y_pred = model.predict(X_test_D, fNameD)
+    else:
+        model.predict(np.zeros_like(X_test_A))
 
-def test_fedxgboost_iris():
-    model = FedXGBoostClassifier()
-    test_iris(model)
+    y_pred_org = y_pred.copy()
+    
+    return y_pred_org, y_test, model
 
-def test_fedxgboost_gmc():
-    model = FedXGBoostClassifier()
-    test_give_me_credits(model)
-
-def test_secureboost_iris():
-    model = SecureBoostClassifier()
-    test_iris(model)
-
-def test_secureboost_gmc():
-    model = SecureBoostClassifier()
-    test_give_me_credits(model)
-
+from sklearn import metrics
 try:
     import logging
 
     logger.setLevel(logging.INFO)
-    #test_fedxgboost_iris()
 
-    test_secureboost_iris()
-    
+    # Model selection
+    #model = SecureBoostClassifier()
+    model = FedXGBoostClassifier()
+
+    # Dataset selection    
+    if rank != 0:
+        #y_pred, y_test, model = test_default_credit_client(model)
+        #y_pred, y_test, model = test_give_me_credits(model)
+        y_pred, y_test, model = test_iris(model)
+
+        if rank == PARTY_ID.ACTIVE_PARTY:
+            y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
+            y_pred[y_pred > 0.5] = 1
+            y_pred[y_pred <= 0.5] = 0
+            result = y_pred - y_test
+            
+            print("Prediction Acc: ", np.sum(result == 0) / y_pred.shape[0])
+            logger.info("Pred: %s", str(y_pred))
+            logger.info("True: %s", str(y_test))
+            
+            auc = metrics.roc_auc_score(y_test, y_pred)
+            print("AUC", auc)
+
+        model.performanceLogger.print_info()
 
 except Exception as e:
-  logger.error("Exception occurred", exc_info=True)
-
+    logger.error("Exception occurred", exc_info=True)
+    print("Rank ", rank, e)

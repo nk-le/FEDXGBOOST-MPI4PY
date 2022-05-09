@@ -199,8 +199,6 @@ class QuantiledDataBase(DataBase):
             for v, s in zip(fSM, scArr):
                 if(np.allclose(v, bestSplitVector)):
                     return key, s
-                if(rank == 3):
-                    logger.info("%s: %d", v, np.allclose(v, bestSplitVector))
 
         logger.error("No matched splitting candidate.")
         logger.error("Optimal splitting vector: %s", str(bestSplitVector))
