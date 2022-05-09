@@ -2,6 +2,7 @@ from datetime import datetime
 from statistics import mode
 import pandas as pd
 import numpy as np
+from federated_xgboost.FLTree import PlainFedXGBoost
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
 from common.Common import PARTY_ID, rank, logger
 from federated_xgboost.SecureBoostTree import SecureBoostClassifier
@@ -182,32 +183,38 @@ def test_default_credit_client(model):
     return y_pred_org, y_test, model
 
 from sklearn import metrics
+import sys
 try:
     import logging
-
+    #np.set_printoptions(threshold=sys.maxsize)
+    
     logger.setLevel(logging.INFO)
 
     # Model selection
     #model = SecureBoostClassifier()
-    model = FedXGBoostClassifier()
+    #model = FedXGBoostClassifier()
+    model = PlainFedXGBoost(10)
 
     # Dataset selection    
     if rank != 0:
-        #y_pred, y_test, model = test_default_credit_client(model)
+        y_pred, y_test, model = test_default_credit_client(model)
         #y_pred, y_test, model = test_give_me_credits(model)
-        y_pred, y_test, model = test_iris(model)
-
+        #y_pred, y_test, model = test_iris(model)
+        y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
             y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
+            y_pred_true = y_pred.copy()
             y_pred[y_pred > 0.5] = 1
             y_pred[y_pred <= 0.5] = 0
             result = y_pred - y_test
             
             print("Prediction Acc: ", np.sum(result == 0) / y_pred.shape[0])
-            logger.info("Pred: %s", str(y_pred))
-            logger.info("True: %s", str(y_test))
+            strPred = ""
+            for i in range(len(y_pred)):
+                strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
+            logger.info("Pred: %s", str(strPred))
             
-            auc = metrics.roc_auc_score(y_test, y_pred)
+            auc = metrics.roc_auc_score(y_test, y_pred_true)
             print("AUC", auc)
 
         model.performanceLogger.print_info()

@@ -1,7 +1,7 @@
 
 import pandas as pd
 import numpy as np
-
+from common.Common import rank
 
 def get_iris():
     data = pd.read_csv('./dataset/iris.csv').values
@@ -22,7 +22,7 @@ def get_iris():
     return X_train, y_train, X_test, y_test, fName
 
 def get_give_me_credits():
-    data = pd.read_csv('./dataset/GiveMeSomeCredit/cs-training-small.csv')
+    data = pd.read_csv('./dataset/GiveMeSomeCredit/cs-training.csv')
     data.dropna(inplace=True)
     fName = ['SeriousDlqin2yrs',
        'RevolvingUtilizationOfUnsecuredLines', 'age',
@@ -48,6 +48,11 @@ def get_give_me_credits():
     num = 7500
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
+
+    if rank == 1:
+        print("Data Dsitribution")
+        print(zero_ratio, one_ratio)
+
     X_train, X_test = np.concatenate((zero_data[:train_size_zero, 1:], one_data[:train_size_one, 1:]), 0), \
                       np.concatenate((zero_data[train_size_zero:train_size_zero+int(num * zero_ratio)+1, 1:], one_data[train_size_one:train_size_one+int(num * one_ratio), 1:]), 0)
     y_train, y_test = np.concatenate(
@@ -92,6 +97,11 @@ def get_default_credit_client():
     nTest = 8000
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
+
+    if rank == 1:
+        print("Data Dsitribution")
+        print(zero_ratio, one_ratio)
+        
     X_train = np.concatenate((zero_data[:train_size_zero, :-1], one_data[:train_size_one, :-1]), 0)
                       
     X_test = np.concatenate((zero_data[train_size_zero:train_size_zero+int(nTest * zero_ratio)+1, :-1], 

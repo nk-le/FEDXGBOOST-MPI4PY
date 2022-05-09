@@ -12,9 +12,9 @@ from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitt
 
 
 class FLXGBoostClassifierBase():
-    def __init__(self):
-        self.nTree = 3
-        self.trees = self.assign_tree()
+    def __init__(self, treeSet):
+        self.nTree = len(treeSet)
+        self.trees = treeSet #self.assign_tree()
         
         self.dataBase = DataBase()
         self.label = []
@@ -83,6 +83,15 @@ class FLXGBoostClassifierBase():
         return y_pred
 
 
+class PlainFedXGBoost(FLXGBoostClassifierBase):
+    def __init__(self, nTree = 3):
+        trees = []
+        for _ in range(nTree):
+            tree = FLPlainXGBoostTree()
+            trees.append(tree)
+        super().__init__(trees)
+
+
 
 
 class FLPlainXGBoostTree():
@@ -131,7 +140,7 @@ class FLPlainXGBoostTree():
             b = FLVisNode(self.root)
             b.display(treeID)
 
-    def generate_leaf(self, gVec, hVec, lamb = 0.1):
+    def generate_leaf(self, gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
         gI = sum(gVec) 
         hI = sum(hVec)
         ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
@@ -139,6 +148,8 @@ class FLPlainXGBoostTree():
 
     # This method requires normally the highest privacy concern
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
+        privateSM = np.array([])
+
         # Start finding the optimal candidate federatedly
         if rank == PARTY_ID.ACTIVE_PARTY:
             sInfo = SplittingInfo()
@@ -153,7 +164,7 @@ class FLPlainXGBoostTree():
                     sumHRVec = np.matmul(rxSM, qDataBase.hessVec).reshape(-1)
                     sumGLVec = sum(qDataBase.gradVec) - sumGRVec
                     sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    L = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec, 0.01)
+                    L = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec)
                 
                     logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
                         "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
@@ -171,7 +182,9 @@ class FLPlainXGBoostTree():
                         #sInfo.bestSplittingVector = rxSM[bestSplitId, :]
                                 
             # Build Tree from the feature with the optimal index
-            self.fed_finalize_optimal_finding(sInfo, qDataBase)
+            # Build Tree from the feature with the optimal index
+            for partners in range(2, nprocs):
+                data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
@@ -184,14 +197,16 @@ class FLPlainXGBoostTree():
             txSM = comm.send(privateSM, dest = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.RAW_SPLITTING_MATRIX)
             logger.warning("Sent the splitting matrix to the active party")         
 
-            # sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_INFO)
-            # logger.warning("Received the Splitting Info from the active party") 
+            # Receive the optimal splitting information
+            sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)            
+            logger.warning("Received the Splitting Info from the active party")   
 
 
             # Post processing the splitting information before returning
             # Set the optimal split as the owner ID of the current tree node
-            # If the selected party is me     
-            self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
+            # If the selected party is me  
+             
+        sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         
         return sInfo
 
@@ -256,13 +271,13 @@ class FLPlainXGBoostTree():
                 self.fed_grow(rD, depth, NodeDirection = TreeNodeType.RIGHT, currentNode=currentNode.rightBranch)
             
             else:
-                endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec, lamb = 0.2)
+                endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
                 currentNode.weight = endNode.weight
 
                 logger.warning("Reached max-depth or Gain is negative. Terminate the tree growing,\
                      generate the leaf with weight Leaf Weight: %f", currentNode.weight)
         else:
-            endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec, lamb = 0.2)
+            endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
             currentNode.weight = endNode.weight
 
             logger.warning("Splitting candidate is not feasible. Terminate the tree growing,\

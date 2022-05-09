@@ -9,7 +9,7 @@ from common.Common import Direction, SplittingInfo, logger,rank
 
 class QuantileParam:
     epsilon = 0.02
-    thres_balance = 0.3
+    thres_balance = 0.2
 
 class FeatureData:
     def __init__(self, name, dataVector) -> None:
@@ -199,7 +199,7 @@ class QuantiledDataBase(DataBase):
             for v, s in zip(fSM, scArr):
                 if(np.allclose(v, bestSplitVector)):
                     return key, s
-
+                
         logger.error("No matched splitting candidate.")
         logger.error("Optimal splitting vector: %s", str(bestSplitVector))
         logger.error("My splitting matrix: %s", str(self.get_merged_splitting_matrix()))
