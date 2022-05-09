@@ -39,5 +39,5 @@ class PerformanceLogger:
         self.dtTotal = get_current_time() - tStart
 
     def print_info(self):
-        logger.info("Boosting performance\ndtBoost: %.1f| nTree = %d \ndtTree: %s\ndtPred: %s", 
+        logger.warning("Boosting performance\ndtBoost: %.1f| nTree = %d \ndtTree: %s\ndtPred: %s", 
                 self.dtTotal, len(self.dtTree), str(self.dtTree), str(self.dtPred))

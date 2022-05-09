@@ -25,17 +25,10 @@ class FedXGBoostClassifier(FLXGBoostClassifierBase):
     def __init__(self, nTree = 3):
         trees = []
         for _ in range(nTree):
-            tree = FLPlainXGBoostTree()
-            trees.append(tree)
-        super().__init__(trees)
-        
-
-    def assign_tree(self, nTree = 3):
-        trees = []
-        for _ in range(self.nTree):
             tree = VerticalFedXGBoostTree()
             trees.append(tree)
-        return trees
+        super().__init__(trees)
+
 
 class VerticalFedXGBoostTree(FLPlainXGBoostTree):
     def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):
@@ -46,19 +39,29 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         # Start finding the optimal candidate federatedly
         nprocs = comm.Get_size()
         sInfo = SplittingInfo()
-        privateSM = np.array([])
+        privateSM = qDataBase.get_merged_splitting_matrix()
 
         if rank == PARTY_ID.ACTIVE_PARTY:
+            if privateSM.size: # check it own candidate
+                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
+                if(maxScore > 0):
+                    sInfo.isValid = True
+                    sInfo.bestSplitParty = PARTY_ID.ACTIVE_PARTY
+                    sInfo.selectedCandidate = bestSplitId
+                    sInfo.bestSplitScore = maxScore
+
             # Perform the QR Decomposition
             matGH = np.concatenate((qDataBase.gradVec, qDataBase.hessVec), axis=1)
 
             #print(matGH)
             #q, r = np.linalg.qr(matGH)
             Z = null_space(matGH.T)
+            indices = np.random.choice(Z.shape[1], 20, replace=False)
+            Z = Z[:, indices]
             logger.info("Performed QR decomposition of [G, H])")
             logger.debug("GradHess matrix: %s", str(matGH.T))
             logger.debug("Nullspace matrix: %s", str(Z))
-            
+            #print(Z.shape, qDataBase.gradVec.shape)
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
                 status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
@@ -72,25 +75,36 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                 # Find the optimal splitting score iff the splitting matrix is provided
                 rxSR = rxSR.T
                 if rxSR.size:
-                    sumGRVec = np.matmul(rxSR, qDataBase.gradVec).reshape(-1)
-                    sumHRVec = np.matmul(rxSR, qDataBase.hessVec).reshape(-1)
-                    sumGLVec = sum(qDataBase.gradVec) - sumGRVec
-                    sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
-                    logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
-                        "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
-                        "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
-                        "\nSplitting Score: {}".format(L.T))       
-                    
-                    bestSplitId = np.argmax(L)
-                    maxScore = L[bestSplitId]
-
+                    score, maxScore, bestSplitId = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
-                        sInfo.bestSplittingVector = None # Unknown for AP
+                        sInfo.isValid = True
+                    # sumGRVec = np.matmul(rxSR, qDataBase.gradVec).reshape(-1)
+                    # sumHRVec = np.matmul(rxSR, qDataBase.hessVec).reshape(-1)
+                    # sumGLVec = sum(qDataBase.gradVec) - sumGRVec
+                    # sumHLVec = sum(qDataBase.hessVec) - sumHRVec
+                    # L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
+                    # logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
+                    #     "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
+                    #     "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
+                    #     "\nSplitting Score: {}".format(L.T))       
+                    
+                    # bestSplitId = np.argmax(L)
+                    # maxScore = L[bestSplitId]
+
+                    # # Select the optimal over all partner parties
+                    # if (maxScore > sInfo.bestSplitScore):
+                    #     sInfo.bestSplitScore = maxScore
+                    #     sInfo.bestSplitParty = partners
+                    #     sInfo.selectedCandidate = bestSplitId
+                    #     sInfo.bestSplittingVector = None # Unknown for AP
+
+                    
+
+                    
                                 
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):

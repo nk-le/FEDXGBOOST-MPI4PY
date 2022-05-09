@@ -137,31 +137,14 @@ class FLPlainXGBoostTree():
         ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
         return ret
 
-    # This method requires normally the highest privacy concern
-    def get_optimal_split_score(self, gVec, hVec, sm):
-        sumGRVec = np.matmul(sm, gVec).reshape(-1)
-        sumHRVec = np.matmul(sm, hVec.hessVec).reshape(-1)
-        sumGLVec = sum(gVec) - sumGRVec
-        sumHLVec = sum(hVec) - sumHRVec
-        L = compute_splitting_score(sm, gVECc, h)
-                
-        logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
-            "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
-            "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
-            "\nSplitting Score: {}".format(L.T))       
-        
-        bestSplitId = np.argmax(L)
-        maxScore = L[bestSplitId]
-
-        return maxScore, bestSplitId
     
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Each party studies their own user's distribution and prepare the splitting matrix
         privateSM = qDataBase.get_merged_splitting_matrix()
+        sInfo = SplittingInfo()
 
         # Start finding the optimal candidate federatedly
         if rank == PARTY_ID.ACTIVE_PARTY:
-            sInfo = SplittingInfo()
             if privateSM.size: # check it own candidate
                 score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
                 if(maxScore > 0):
@@ -399,36 +382,6 @@ class FLPlainXGBoostTree():
                 #logger.info("Pending...")
                 pass
             return 0
-
-    
-
-    def get_max_score(L: list, rxSM):
-        """
-        This method is no longer needed since the passive parties will propose only the splitting options with balance
-        """
-        # Optimal candidate of 1 partner party
-        # Select the optimal candidates without all zeros or one elements of the splitting)
-        # isValid = False
-        # excId = np.zeros(L.size, dtype=bool)
-        # for id in range(len(L)):
-        #     splitVector = rxSM[id, :]
-        #     nL = np.count_nonzero(splitVector == 0.0)
-        #     nR = np.count_nonzero(splitVector == 1.0)
-        #     thres = 0.1 # TODO: bring this value outside as parameters 
-        #     isValid = (((nL/len(splitVector)) > thres) and ((nR/len(splitVector)) > thres))
-        #     #print(nL, nR, len(splitVector), isValid)
-        #     if not isValid:
-        #         excId[id] = True
-
-        # Mask the exception index to avoid strong imbalance between each node's users ratio     
-        # tmpL = np.ma.array(L, mask=excId) 
-        # bestSplitId = np.argmax(tmpL)
-        # maxScore = tmpL[bestSplitId]     
-        # return maxScore, bestSplitId
-        pass
-
-
-
 
     def predict(self, dataTable, featureName):        
         dataBase = DataBase.data_matrix_to_database(dataTable, featureName)

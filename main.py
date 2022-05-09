@@ -239,7 +239,7 @@ try:
     import logging
     #np.set_printoptions(threshold=sys.maxsize)
     
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.WARNING)
 
     # Model selection
     #model = SecureBoostClassifier()
@@ -249,9 +249,9 @@ try:
     # Dataset selection    
     if rank != 0:
         #y_pred, y_test, model = test_default_credit_client(model)
-        #y_pred, y_test, model = test_give_me_credits(model)
+        y_pred, y_test, model = test_give_me_credits(model)
         #y_pred, y_test, model = test_iris(model)
-        y_pred, y_test, model = test_adult(model)
+        #y_pred, y_test, model = test_adult(model)
         y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
             y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
