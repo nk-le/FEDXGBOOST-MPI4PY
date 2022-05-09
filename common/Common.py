@@ -66,6 +66,7 @@ class SplittingInfo:
         self.bestSplittingVector = None
         self.selectedFeatureID = 0
         self.selectedCandidate = 0
+        self.isValid = False
 
         self.featureName = None
         self.splitValue = 0.0

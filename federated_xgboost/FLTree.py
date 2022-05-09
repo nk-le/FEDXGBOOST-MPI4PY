@@ -179,7 +179,8 @@ class FLPlainXGBoostTree():
                         sInfo.bestSplitScore = maxScore
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
-                        #sInfo.bestSplittingVector = rxSM[bestSplitId, :]
+                        sInfo.bestSplittingVector = None
+                        sInfo.isValid = True
                                 
             # Build Tree from the feature with the optimal index
             # Build Tree from the feature with the optimal index
@@ -205,13 +206,15 @@ class FLPlainXGBoostTree():
             # Post processing the splitting information before returning
             # Set the optimal split as the owner ID of the current tree node
             # If the selected party is me  
-             
-        sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
+
+        if (sInfo.isValid):
+            sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         
         return sInfo
 
 
     def fed_finalize_optimal_finding(self, sInfo: SplittingInfo, qDataBase: QuantiledDataBase, privateSM = np.array([])):
+        sInfo.log()
         # Set the optimal split as the owner ID of the current tree node
         # If the selected party is me
         # TODO: Considers implement this generic --> direct in the grow method as post processing?
@@ -220,6 +223,8 @@ class FLPlainXGBoostTree():
             feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
 
             updateSInfo = deepcopy(sInfo)
+            logger.info("Info of the copied version")
+            updateSInfo.log()
             updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
             nprocs = comm.Get_size()
             for partners in range(1, nprocs):
@@ -241,19 +246,16 @@ class FLPlainXGBoostTree():
         logger.info("Tree is growing depth-wise. Current depth: {}".format(depth) + " Node's type: {}".format(NodeDirection))
         currentNode.nUsers = qDataBase.nUsers
 
-        # Assign the unique fed tree id for each node
+        # Assign the unique fed tree id for each nodeand save the splitting info for each node
         currentNode.FID = self.nNode
         self.nNode += 1
-
-        # Distributed splitting evaluation
-
         sInfo = self.fed_optimal_split_finding(qDataBase)
         sInfo.log()
         currentNode.set_splitting_info(sInfo)
 
         # Get the optimal splitting candidates and partition them into two databases
-        if(sInfo.bestSplittingVector is not None):      
-            maxDepth = 3
+        if(sInfo.isValid):      
+            maxDepth = XgboostLearningParam.MAX_DEPTH
             # Construct the new tree if the gain is positive
             if (depth <= maxDepth) and (sInfo.bestSplitScore > 0):
                 depth += 1

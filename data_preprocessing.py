@@ -45,7 +45,7 @@ def get_give_me_credits():
     one_data = data[one_index]
     zero_ratio = len(zero_data) / data.shape[0]
     one_ratio = len(one_data) / data.shape[0]
-    num = 7500
+    num = 10000
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
 
@@ -101,7 +101,7 @@ def get_default_credit_client():
     if rank == 1:
         print("Data Dsitribution")
         print(zero_ratio, one_ratio)
-        
+
     X_train = np.concatenate((zero_data[:train_size_zero, :-1], one_data[:train_size_one, :-1]), 0)
                       
     X_test = np.concatenate((zero_data[train_size_zero:train_size_zero+int(nTest * zero_ratio)+1, :-1], 
@@ -120,3 +120,32 @@ def get_default_credit_client():
             "PAY_AMT1","PAY_AMT2","PAY_AMT3","PAY_AMT4","PAY_AMT5","PAY_AMT6"]
 
     return X_train, y_train, X_test, y_test, fName
+
+def get_adults():
+    data = np.load('./dataset/adult.npy')
+    data = data / data.max(axis=0)
+
+    ratio = 0.8
+
+    zero_index = data[:, 0] == 0
+    one_index = data[:, 0] == 1
+    zero_data = data[zero_index]
+    one_data = data[one_index]
+
+    train_size_zero = int(zero_data.shape[0] * ratio) + 1
+    train_size_one = int(one_data.shape[0] * ratio)
+
+    X_train, X_test = np.concatenate((zero_data[:train_size_zero, 1:], one_data[:train_size_one, 1:]), 0), \
+                      np.concatenate((zero_data[train_size_zero:, 1:], one_data[train_size_one:, 1:]), 0)
+    y_train, y_test = np.concatenate(
+        (zero_data[:train_size_zero, 0].reshape(-1, 1), one_data[:train_size_one, 0].reshape(-1, 1)), 0), \
+                      np.concatenate((zero_data[train_size_zero:, 0].reshape(-1, 1),
+                                      one_data[train_size_one:, 0].reshape(-1, 1)), 0)
+
+    segment_A = int(0.2 * (data.shape[1] - 1))
+    segment_B = segment_A + int(0.2 * (data.shape[1] - 1))
+    segment_C = segment_B + int(0.3 * (data.shape[1] - 1))
+
+    return X_train, y_train, X_test, y_test, segment_A, segment_B, segment_C
+
+    

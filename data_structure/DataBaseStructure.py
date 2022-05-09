@@ -6,7 +6,6 @@ from scipy import rand
 
 from common.Common import Direction, SplittingInfo, logger,rank
 
-
 class QuantileParam:
     epsilon = 0.02
     thres_balance = 0.2
