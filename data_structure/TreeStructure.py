@@ -5,6 +5,7 @@ from math import ceil, log
 import time
 
 from common.Common import SplittingInfo, logger
+from federated_xgboost.XGBoostCommon import XgboostLearningParam
 
 class TreeNode:
     def __init__(self, weight = 0.0, leftBranch=None, rightBranch=None):
@@ -29,9 +30,9 @@ class TreeNode:
     def get_private_info(self):
         return
 
-
     def is_leaf(self):
         return (self.leftBranch is None) and (self.rightBranch is None)
+
 
 class FLTreeNode(TreeNode):
     def __init__(self, FID = 0, weight=0, nUsers = 0, leftBranch=None, rightBranch=None, ownerID = -1):
@@ -40,7 +41,8 @@ class FLTreeNode(TreeNode):
         self.owner = ownerID
         self.splittingInfo = SplittingInfo()
         self.nUsers = nUsers
-        
+        self.score = None
+
     def get_private_info(self):
         return "\nOwner ID:{}".format(self.owner)
 
@@ -58,4 +60,23 @@ class FLTreeNode(TreeNode):
                     #print("Yay")
                     return ret
         return None
+
+  
+    def compute_score(self):
+        score = 0
+        if self.is_leaf():
+            return self.score + XgboostLearningParam.GAMMA
+        else:
+            for child in [self.leftBranch, self.rightBranch]:
+                if child is not None:
+                    score += child.compute_score() 
+        return score
+
+    @staticmethod
+    def compute_leaf_param(gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
+        gI = sum(gVec) 
+        hI = sum(hVec)
+        weight = -1.0 * gI / (hI + lamb)
+        score = 1/2 * weight * gI
+        return weight, score
 

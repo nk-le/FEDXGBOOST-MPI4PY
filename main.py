@@ -239,22 +239,22 @@ try:
     import logging
     #np.set_printoptions(threshold=sys.maxsize)
     
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.DEBUG)
 
     # Model selection
     #model = SecureBoostClassifier()
-    model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
-    #model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
+    #model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
+    model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
 
     # Dataset selection    
     if rank != 0:
         #y_pred, y_test, model = test_default_credit_client(model)
-        y_pred, y_test, model = test_give_me_credits(model)
-        #y_pred, y_test, model = test_iris(model)
+        #y_pred, y_test, model = test_give_me_credits(model)
+        y_pred, y_test, model = test_iris(model)
         #y_pred, y_test, model = test_adult(model)
         y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
-            y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
+            #y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
             y_pred_true = y_pred.copy()
             y_pred[y_pred > 0.5] = 1
             y_pred[y_pred <= 0.5] = 0

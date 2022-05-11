@@ -1,4 +1,5 @@
 
+from distutils.log import Log
 import numpy as np
 from algo.LossFunction import LeastSquareLoss, LogLoss
 
@@ -10,7 +11,7 @@ class XgboostLearningParam:
     LOSS_FUNC = LogLoss()
     LAMBDA = 1
     GAMMA = 0.5
-    N_TREES = 5
+    N_TREES = 3
     MAX_DEPTH = 3
 
 def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):

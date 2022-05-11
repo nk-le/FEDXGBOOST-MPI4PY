@@ -14,19 +14,20 @@ class FLVisNode():
         self.splittingInfo = FLnode.splittingInfo
         self.nUsers = FLnode.nUsers
         self.fid = FLnode.FID
+        self.score = FLnode.score
 
     def display(self, treeID):
         lines, *_ = self._display_aux()
-        logger.info("Structure of tree %d", treeID)
+        logger.warning("Structure of tree %d", treeID)
         for line in lines:
-            logger.info("%s", line)
+            logger.warning("%s", line)
         
 
     def _display_aux(self):
         """Returns list of strings, width, height, and horizontal coordinate of the root."""
         # No child.
         if self.right is None and self.left is None:
-            line = 'FID: %d: ' % self.fid + '[N = %d: W = %s]' % (self.nUsers, str(self.weight))
+            line = 'FID: %d: ' % self.fid + '[N = %d: W = %s S: %s]' % (self.nUsers, str(self.weight), str(self.score))
             width = len(line)
             height = 1
             middle = width // 2
@@ -57,7 +58,7 @@ class FLVisNode():
         right, m, q, y = self.right._display_aux()
         #s = '%s' % self.key
         #print(self.splittingInfo.selectedFeatureID)
-        s = 'FID: %d: ' % self.fid + self.splittingInfo.get_str_split_info()
+        s = 'FID: %d: ' % self.fid + self.splittingInfo.get_str_split_info() 
         u = len(s)
         first_line = (x + 1) * ' ' + (n - x - 1) * '_' + s + y * '_' + (m - y) * ' '
         second_line = x * ' ' + '/' + (n - x - 1 + u + y) * ' ' + '\\' + (m - y - 1) * ' '

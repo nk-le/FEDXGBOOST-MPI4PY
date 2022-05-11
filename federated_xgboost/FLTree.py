@@ -44,7 +44,8 @@ class FLXGBoostClassifierBase():
         orgData = deepcopy(self.dataBase)
         y = self.label
         y_pred = np.zeros(np.shape(self.label))
-    
+        #y_pred = np.ones(np.shape(self.label)) * 0.5
+
         # Start federated boosting
         tStartBoost = self.performanceLogger.log_start_boosting()
         for i in range(self.nTree): 
@@ -104,8 +105,6 @@ class FLPlainXGBoostTree():
     def fit_fed(self, y, yPred, treeID, qDataBase: QuantiledDataBase):
         logger.info("Tree is growing column-wise. Current column: %d", treeID)
 
-        #super().fit(y_and_pred, treeID)
-
         """
         This function computes the gradient and the hessian vectors to perform the tree construction
         """
@@ -113,7 +112,7 @@ class FLPlainXGBoostTree():
         if rank == PARTY_ID.ACTIVE_PARTY: # Calculate gradients on the node who have labels.
             G = np.array(self.learningParam.LOSS_FUNC.gradient(y, yPred)).reshape(-1)
             H = np.array(self.learningParam.LOSS_FUNC.hess(y, yPred)).reshape(-1)
-            logger.info("Computed Gradients and Hessians ")
+            logger.debug("Computed Gradients and Hessians ")
             logger.debug("G {}".format(' '.join(map(str, G))))
             logger.debug("H {}".format(' '.join(map(str, H))))
             qDataBase.appendGradientsHessian(G, H) 
@@ -123,19 +122,30 @@ class FLPlainXGBoostTree():
             dummyH = np.zeros((qDataBase.nUsers,1))
             qDataBase.appendGradientsHessian(dummyG, dummyH)
 
+        # Start tree boosting
         if(rank != 0):
             rootNode = FLTreeNode()
+
+            # All parties grow the tree distributedly
             self.fed_grow(qDataBase, depth = 0, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
             self.root = rootNode
+
             # Display the tree in the log file
             b = FLVisNode(self.root)
             b.display(treeID)
 
-    def generate_leaf(self, gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
-        gI = sum(gVec) 
-        hI = sum(hVec)
-        ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
-        return ret
+            # Evaluation
+            if(rank == 1):
+                newTreeScore = self.root.compute_score()
+                diff = self.learningParam.LOSS_FUNC.diff(y, yPred)
+                score = newTreeScore + diff
+                print("Loss", diff, "Tree Gain", newTreeScore, "Score", score)
+
+    # def generate_leaf(self, gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
+    #     gI = sum(gVec) 
+    #     hI = sum(hVec)
+    #     ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
+    #     return ret
 
     
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
@@ -240,29 +250,34 @@ class FLPlainXGBoostTree():
         if(sInfo.isValid):      
             maxDepth = XgboostLearningParam.MAX_DEPTH
             # Construct the new tree if the gain is positive
-            if (depth <= maxDepth) and (sInfo.bestSplitScore > 0):
+            if (depth < maxDepth) and (sInfo.bestSplitScore > 0):
                 depth += 1
                 lD, rD = qDataBase.partition(sInfo.bestSplittingVector)
-                logger.info("Growing to the next depth %d. Splitting database into two quantiled databases", depth)
-                logger.info("\nOriginal database: %s", qDataBase.get_info_string())
-                logger.info("\nLeft splitted database: %s", lD.get_info_string())
-                logger.info("\nRight splitted database: %s \n", rD.get_info_string())
-
-                currentNode.leftBranch = FLTreeNode()
-                currentNode.rightBranch = FLTreeNode()
+                logger.info("Splitting the database according to the best splitting vector.")
+                logger.debug("\nOriginal database: %s", qDataBase.get_info_string())
+                logger.debug("\nLeft splitted database: %s", lD.get_info_string())
+                logger.debug("\nRight splitted database: %s \n", rD.get_info_string())
 
                 # grow recursively
+                currentNode.leftBranch = FLTreeNode()
+                currentNode.rightBranch = FLTreeNode()
                 self.fed_grow(lD, depth,NodeDirection = TreeNodeType.LEFT, currentNode=currentNode.leftBranch)
                 self.fed_grow(rD, depth, NodeDirection = TreeNodeType.RIGHT, currentNode=currentNode.rightBranch)
             
             else:
-                endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
-                currentNode.weight = endNode.weight
+                weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec)
+                currentNode.weight = weight
+                currentNode.score = score
+                currentNode.leftBranch = None
+                currentNode.rightBranch = None
 
                 logger.warning("Reached max-depth or Gain is negative. Terminate the tree growing, generate the leaf with weight Leaf Weight: %f", currentNode.weight)
         else:
-            endNode = self.generate_leaf(qDataBase.gradVec, qDataBase.hessVec)
-            currentNode.weight = endNode.weight
+            weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec)
+            currentNode.weight = weight
+            currentNode.score = score
+            currentNode.leftBranch = None
+            currentNode.rightBranch = None
 
             logger.warning("Splitting candidate is not feasible. Terminate the tree growing and generate the leaf with weight Leaf Weight: %f", currentNode.weight)
             
@@ -337,7 +352,7 @@ class FLPlainXGBoostTree():
                     req = FedDirRequestInfo(userId)
                     req.nodeFedId = curNode.FID
                     
-                    logger.debug("Sent the direction request to all partner party")
+                    logger.debug("Sent the direction request to all partner parties")
                     status = comm.send(req, dest = curNode.owner, tag = MSG_ID.REQUEST_DIRECTION)
                     
                     # Receive the response
@@ -361,7 +376,7 @@ class FLPlainXGBoostTree():
                 logger.debug("Received the direction inference request. Start Classifying ...") 
                 rxReqData = comm.recv(source = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.REQUEST_DIRECTION)
                 userClassified = rxReqData.userIdList
-                rxReqData.log()
+                #rxReqData.log()
                 # Find the node and verify that it exists 
                 fedNodePtr = self.root.find_child_node(rxReqData.nodeFedId)                
                 # Classify the user according to the current node
