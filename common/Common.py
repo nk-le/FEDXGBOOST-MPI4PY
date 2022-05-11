@@ -26,6 +26,10 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
+
+
+
+
 class TreeNodeType:
     ROOT = "Root"
     LEFT = "Left"

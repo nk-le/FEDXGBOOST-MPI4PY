@@ -94,13 +94,14 @@ def get_default_credit_client():
     one_data = data[one_index]
     zero_ratio = len(zero_data) / data.shape[0]
     one_ratio = len(one_data) / data.shape[0]
+    if rank == 1:
+        print("Data Dsitribution")
+        print(zero_ratio, one_ratio)
     nTest = 8000
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
 
-    if rank == 1:
-        print("Data Dsitribution")
-        print(zero_ratio, one_ratio)
+    
 
     X_train = np.concatenate((zero_data[:train_size_zero, :-1], one_data[:train_size_one, :-1]), 0)
                       
@@ -131,6 +132,12 @@ def get_adults():
     one_index = data[:, 0] == 1
     zero_data = data[zero_index]
     one_data = data[one_index]
+
+    zero_ratio = len(zero_data) / data.shape[0]
+    one_ratio = len(one_data) / data.shape[0]
+    if rank == 1:
+        print("Data Dsitribution")
+        print(zero_ratio, one_ratio)
 
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)

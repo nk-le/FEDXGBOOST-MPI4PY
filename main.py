@@ -235,26 +235,38 @@ def test_adult(model):
 
 from sklearn import metrics
 import sys
+from config import CONFIG, dataset
+
 try:
     import logging
     #np.set_printoptions(threshold=sys.maxsize)
     
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
 
     # Model selection
     #model = SecureBoostClassifier()
-    #model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
-    model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
+    if CONFIG["model"] == "PlainFedXGBoost":
+        model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
+    elif CONFIG["model"] == "FedXGBoost":
+        model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
+
+    logger.warning("Test Info: \n{0}".format(CONFIG))
+
 
     # Dataset selection    
     if rank != 0:
-        #y_pred, y_test, model = test_default_credit_client(model)
-        #y_pred, y_test, model = test_give_me_credits(model)
-        y_pred, y_test, model = test_iris(model)
-        #y_pred, y_test, model = test_adult(model)
+        if CONFIG["dataset"] == dataset[0]:
+            y_pred, y_test, model = test_iris(model)
+        elif CONFIG["dataset"] == dataset[1]:
+            y_pred, y_test, model = test_give_me_credits(model)
+        elif CONFIG["dataset"] == dataset[2]:
+            y_pred, y_test, model = test_adult(model)
+        elif CONFIG["dataset"] == dataset[3]:
+            y_pred, y_test, model = test_default_credit_client(model)
+        
         y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
-            #y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
+            y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
             y_pred_true = y_pred.copy()
             y_pred[y_pred > 0.5] = 1
             y_pred[y_pred <= 0.5] = 0
@@ -272,7 +284,7 @@ try:
             #fScore = metrics.f1_score(y_test, y_pred_true)
             #print("F1 Score", fScore)
 
-        model.performanceLogger.print_info()
+            model.log_info()
 
 except Exception as e:
     logger.error("Exception occurred", exc_info=True)

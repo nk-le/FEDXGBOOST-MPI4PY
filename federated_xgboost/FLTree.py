@@ -1,9 +1,10 @@
+import sys
 import numpy as np
 from common.Common import Direction, FedDirRequestInfo, FedDirResponseInfo, logger, rank, comm, PARTY_ID, MSG_ID, TreeNodeType, SplittingInfo
 from algo.LossFunction import LeastSquareLoss, LogLoss
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
-from federated_xgboost.PerformanceLogger import PerformanceLogger
+from federated_xgboost.PerformanceLogger import CommunicationLogger,TimeLogger
 from visualizer.TreeRender import FLVisNode
 from copy import deepcopy
 
@@ -18,7 +19,12 @@ class FLXGBoostClassifierBase():
         
         self.dataBase = DataBase()
         self.label = []
-        self.performanceLogger = PerformanceLogger()
+        self.excTimeLogger = TimeLogger()
+
+    def log_info(self):
+        self.excTimeLogger.log()
+        for tree in self.trees:
+            tree.commLogger.log()
 
     def assign_tree():
         raise NotImplementedError
@@ -47,15 +53,15 @@ class FLXGBoostClassifierBase():
         #y_pred = np.ones(np.shape(self.label)) * 0.5
 
         # Start federated boosting
-        tStartBoost = self.performanceLogger.log_start_boosting()
+        tStartBoost = self.excTimeLogger.log_start_boosting()
         for i in range(self.nTree): 
-            tStartTree = PerformanceLogger.tic()    
+            tStartTree = TimeLogger.tic()    
             # Perform tree boosting
             dataFit = QuantiledDataBase(self.dataBase)
             self.trees[i].fit_fed(y, y_pred, i, dataFit)
-            self.performanceLogger.log_dt_tree(tStartTree) # Log the executed time
+            self.excTimeLogger.log_dt_fit(tStartTree) # Log the executed time
 
-            tStartPred = PerformanceLogger.tic()
+            tStartPred = TimeLogger.tic()
             if i == self.nTree - 1: # The last tree, no need for prediction update.
                 continue
             else:
@@ -63,9 +69,9 @@ class FLXGBoostClassifierBase():
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
                 y_pred += update_pred
-            self.performanceLogger.log_dt_pred(tStartPred)
+            self.excTimeLogger.log_dt_pred(tStartPred)
 
-        self.performanceLogger.log_end_boosting(tStartBoost)
+        self.excTimeLogger.log_end_boosting(tStartBoost)
 
 
     def predict(self, X, fName = None):
@@ -100,7 +106,7 @@ class FLPlainXGBoostTree():
         self.learningParam = param
         self.root = FLTreeNode()
         self.nNode = 0
-
+        self.commLogger = CommunicationLogger()
 
     def fit_fed(self, y, yPred, treeID, qDataBase: QuantiledDataBase):
         logger.info("Tree is growing column-wise. Current column: %d", treeID)
@@ -136,17 +142,10 @@ class FLPlainXGBoostTree():
 
             # Evaluation
             if(rank == 1):
-                newTreeScore = self.root.compute_score()
-                diff = self.learningParam.LOSS_FUNC.diff(y, yPred)
-                score = newTreeScore + diff
-                print("Loss", diff, "Tree Gain", newTreeScore, "Score", score)
-
-    # def generate_leaf(self, gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
-    #     gI = sum(gVec) 
-    #     hI = sum(hVec)
-    #     ret = TreeNode(-1.0 * gI / (hI + lamb), leftBranch= None, rightBranch= None)
-    #     return ret
-
+                newTreeGain = abs(self.root.compute_score())
+                loss = self.learningParam.LOSS_FUNC.diff(y, yPred)
+                print("Loss", abs(loss), "Tree Gain", newTreeGain)
+                logger.warning("Boosting, TreeID %d, Loss: %f, Gain: %f", treeID, abs(loss), abs(newTreeGain))
     
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Each party studies their own user's distribution and prepare the splitting matrix
@@ -167,6 +166,7 @@ class FLPlainXGBoostTree():
             # Collect all private splitting info from the partners to find the optimal splitting candidates
             for partners in range(2, nprocs):   
                 rxSM = comm.recv(source = partners, tag = MSG_ID.RAW_SPLITTING_MATRIX)
+                self.commLogger.log_nRx(sys.getsizeof(rxSM))
 
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:
@@ -182,6 +182,7 @@ class FLPlainXGBoostTree():
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
+                self.commLogger.log_nTx(sys.getsizeof(sInfo))
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
@@ -271,7 +272,7 @@ class FLPlainXGBoostTree():
                 currentNode.leftBranch = None
                 currentNode.rightBranch = None
 
-                logger.warning("Reached max-depth or Gain is negative. Terminate the tree growing, generate the leaf with weight Leaf Weight: %f", currentNode.weight)
+                logger.info("Reached max-depth or Gain is negative. Terminate the tree growing, generate the leaf with weight Leaf Weight: %f", currentNode.weight)
         else:
             weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec)
             currentNode.weight = weight
@@ -279,14 +280,8 @@ class FLPlainXGBoostTree():
             currentNode.leftBranch = None
             currentNode.rightBranch = None
 
-            logger.warning("Splitting candidate is not feasible. Terminate the tree growing and generate the leaf with weight Leaf Weight: %f", currentNode.weight)
+            logger.info("Splitting candidate is not feasible. Terminate the tree growing and generate the leaf with weight Leaf Weight: %f", currentNode.weight)
             
-        # Post processing
-        # Remove the feature for the next iteration because this is already used
-        if(rank == sInfo.bestSplitParty):
-            #qDataBase.remove_feature(feature) # TODO: Implement a generic method to update the database before going into the next depth
-            pass
-
     def fed_predict(self, database: DataBase): # Encapsulated for many data
         """
         Data matrix has the same format as the data appended to the database, includes the features' values

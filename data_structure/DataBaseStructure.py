@@ -7,8 +7,8 @@ from scipy import rand
 from common.Common import Direction, SplittingInfo, logger,rank
 
 class QuantileParam:
-    epsilon = 0.02
-    thres_balance = 0.2
+    epsilon = 0.005
+    thres_balance = 0.1
 
 class FeatureData:
     def __init__(self, name, dataVector) -> None:

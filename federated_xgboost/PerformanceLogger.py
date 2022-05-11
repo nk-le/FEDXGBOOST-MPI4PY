@@ -7,8 +7,22 @@ from numpy import append
 def get_current_time():
     return timeit.default_timer()
 
-class PerformanceLogger:
+class CommunicationLogger:
+    def __init__(self) -> None:
+        self.tx = []
+        self.rx = []
 
+    def log_nRx(self, nRx):
+        self.rx.append(nRx)
+
+    def log_nTx(self, nTx):
+        self.tx.append(nTx)
+
+    def log(self):
+        logger.warning("Communication, nRx: %s, nTx: %s", str(self.rx), str(self.tx))
+
+
+class TimeLogger:
     def __init__(self) -> None:
         self.tStartBoosting = get_current_time()
         self.tEndBoosting = get_current_time()
@@ -20,7 +34,7 @@ class PerformanceLogger:
         self.tStartBoosting = get_current_time()
         return self.tStartBoosting
 
-    def log_dt_tree(self, tStart: float):
+    def log_dt_fit(self, tStart: float):
         dt = get_current_time() - tStart
         self.dtTree.append(dt)
 
@@ -38,6 +52,6 @@ class PerformanceLogger:
         self.tEndBoosting = get_current_time()
         self.dtTotal = get_current_time() - tStart
 
-    def print_info(self):
-        logger.warning("Boosting performance\ndtBoost: %.1f| nTree = %d \ndtTree: %s\ndtPred: %s", 
+    def log(self):
+        logger.warning("ExecutionTime, dtBoost: %.1f, nTree = %d, dtTree: %s, dtPred: %s", 
                 self.dtTotal, len(self.dtTree), str(self.dtTree), str(self.dtPred))
