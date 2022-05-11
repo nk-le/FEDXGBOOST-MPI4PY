@@ -1,7 +1,7 @@
 
 import pandas as pd
 import numpy as np
-from common.Common import rank
+from config import rank
 
 def get_iris():
     data = pd.read_csv('./dataset/iris.csv').values

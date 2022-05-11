@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 from scipy import rand
 
-from common.Common import Direction, SplittingInfo, logger,rank
+from common.BasicTypes import Direction
+from federated_xgboost.XGBoostCommon import SplittingInfo
+from config import rank, logger
 
 class QuantileParam:
     epsilon = 0.005

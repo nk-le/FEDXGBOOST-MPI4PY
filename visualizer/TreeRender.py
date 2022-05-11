@@ -3,7 +3,7 @@ Copy from stackoverflow...
 https://stackoverflow.com/questions/34012886/print-binary-tree-level-by-level-in-python
 """
 from data_structure.TreeStructure import TreeNode, FLTreeNode
-from common.Common import logger
+from config import logger
 
 class FLVisNode():
     def __init__(self, FLnode: FLTreeNode):

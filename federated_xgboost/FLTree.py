@@ -1,6 +1,7 @@
 import sys
 import numpy as np
-from common.Common import Direction, FedDirRequestInfo, FedDirResponseInfo, logger, rank, comm, PARTY_ID, MSG_ID, TreeNodeType, SplittingInfo
+from common.BasicTypes import Direction
+from config import  logger, rank, comm
 from algo.LossFunction import LeastSquareLoss, LogLoss
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
@@ -9,8 +10,18 @@ from visualizer.TreeRender import FLVisNode
 from copy import deepcopy
 
 from sklearn import metrics
-from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitting_score
+from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitting_score, SplittingInfo, FedDirRequestInfo, FedDirResponseInfo, PARTY_ID
 
+class MSG_ID:
+    MASKED_GH = 99
+    RAW_SPLITTING_MATRIX = 98
+    OPTIMAL_SPLITTING_INFO = 97
+
+    REQUEST_DIRECTION = 96
+    RESPONSE_DIRECTION = 95
+    OPTIMAL_SPLITTING_SELECTION = 94
+    INIT_INFERENCE_SIG = 89
+    ABORT_INFERENCE_SIG = 90
 
 class FLXGBoostClassifierBase():
     def __init__(self, treeSet):
@@ -148,7 +159,7 @@ class FLPlainXGBoostTree():
             rootNode = FLTreeNode()
 
             # All parties grow the tree distributedly
-            self.fed_grow(qDataBase, depth = 0, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
+            self.fed_grow(qDataBase, depth = 1, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
             self.root = rootNode
 
             # Display the tree in the log file
@@ -208,11 +219,11 @@ class FLPlainXGBoostTree():
 
             # Send the splitting matrix to the active party
             txSM = comm.send(privateSM, dest = PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.RAW_SPLITTING_MATRIX)
-            logger.warning("Sent the splitting matrix to the active party")         
+            logger.info("Sent the splitting matrix to the active party")         
 
             # Receive the optimal splitting information
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)            
-            logger.warning("Received the Splitting Info from the active party")   
+            logger.info("Received the Splitting Info from the active party")   
 
 
             # Post processing the splitting information before returning
@@ -251,7 +262,7 @@ class FLPlainXGBoostTree():
         return sInfo
 
 
-    def fed_grow(self, qDataBase: QuantiledDataBase, depth=0, NodeDirection = TreeNodeType.ROOT, currentNode : FLTreeNode = None):
+    def fed_grow(self, qDataBase: QuantiledDataBase, depth, NodeDirection = TreeNodeType.ROOT, currentNode : FLTreeNode = None):
         logger.info("Tree is growing depth-wise. Current depth: {}".format(depth) + " Node's type: {}".format(NodeDirection))
         currentNode.nUsers = qDataBase.nUsers
 

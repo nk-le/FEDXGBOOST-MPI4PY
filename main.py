@@ -5,11 +5,11 @@ import numpy as np
 from data_structure.DataBaseStructure import QuantileParam
 from federated_xgboost.FLTree import PlainFedXGBoost
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
-from common.Common import PARTY_ID, rank, logger
+from config import rank, logger
 from federated_xgboost.SecureBoostTree import SecureBoostClassifier
 
 from data_preprocessing import *
-from federated_xgboost.XGBoostCommon import XgboostLearningParam
+from federated_xgboost.XGBoostCommon import XgboostLearningParam, PARTY_ID 
 
 
 def test_iris(model):
@@ -246,7 +246,7 @@ try:
 
     # Model selection
     #model = SecureBoostClassifier()
-    if CONFIG["model"] == "PlainFedXGBoost":
+    if CONFIG["model"] == "PlainXGBoost":
         model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
     elif CONFIG["model"] == "FedXGBoost":
         model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)

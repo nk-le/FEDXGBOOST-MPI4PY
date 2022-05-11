@@ -1,7 +1,6 @@
 import timeit
 
-from common.Common import logger, rank
-from numpy import append
+from config import logger, rank
 
 
 def get_current_time():

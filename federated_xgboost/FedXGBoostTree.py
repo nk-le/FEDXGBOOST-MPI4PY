@@ -1,7 +1,10 @@
 from copy import deepcopy
+import sys
 import numpy as np
 from scipy.linalg import null_space
-from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
+from config import logger, rank, comm
+
+from federated_xgboost.XGBoostCommon import  PARTY_ID, SplittingInfo
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
@@ -12,6 +15,9 @@ class FEDXGBOOST_MSGID:
     SECURE_RESPONSE = 201
     OPTIMAL_SPLITTING_SELECTION = 202
     OPTIMAL_SPLITTING_INFO = 203
+
+class FEDXGBOOST_PARAMETER:
+    nMaxResponse = 20
 
 def secure_response(privateX, U):
     r = np.random.randint(U.shape[1])
@@ -56,20 +62,21 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             #print(matGH)
             #q, r = np.linalg.qr(matGH)
             Z = null_space(matGH.T)
-            indices = np.random.choice(Z.shape[1], 20, replace=False)
+            indices = np.random.choice(Z.shape[1], FEDXGBOOST_PARAMETER.nMaxResponse, replace=False)
             Z = Z[:, indices]
-            logger.info("Performed QR decomposition of [G, H])")
+            logger.debug("Performed QR decomposition of [G, H])")
             logger.debug("GradHess matrix: %s", str(matGH.T))
             logger.debug("Nullspace matrix: %s", str(Z))
-            #print(Z.shape, qDataBase.gradVec.shape)
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
                 status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
                 #logger.warning("Sent the splitting matrix to the active party")  
+                self.commLogger.log_nTx(sys.getsizeof(Z))
 
                 # Receive the Secure Response from the PP
                 rxSR = comm.recv(source=partners, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
-                logger.warning("Received the secure response from the passive party")
+                logger.info("Received the secure response from the passive party")
+                self.commLogger.log_nRx(sys.getsizeof(rxSR))
 
                 # Collect all private splitting info from the partners to find the optimal splitting candidates
                 # Find the optimal splitting score iff the splitting matrix is provided
@@ -82,30 +89,8 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                         sInfo.bestSplitParty = partners
                         sInfo.selectedCandidate = bestSplitId
                         sInfo.isValid = True
-                    # sumGRVec = np.matmul(rxSR, qDataBase.gradVec).reshape(-1)
-                    # sumHRVec = np.matmul(rxSR, qDataBase.hessVec).reshape(-1)
-                    # sumGLVec = sum(qDataBase.gradVec) - sumGRVec
-                    # sumHLVec = sum(qDataBase.hessVec) - sumHRVec
-                    # L = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
-                    # logger.debug("Received SM from party {} and computed:  \n".format(partners) + \
-                    #     "GR: " + str(sumGRVec.T) + "\n" + "HR: " + str(sumHRVec.T) +\
-                    #     "\nGL: " + str(sumGLVec.T) + "\n" + "HL: " + str(sumHLVec.T) +\
-                    #     "\nSplitting Score: {}".format(L.T))       
                     
-                    # bestSplitId = np.argmax(L)
-                    # maxScore = L[bestSplitId]
-
-                    # # Select the optimal over all partner parties
-                    # if (maxScore > sInfo.bestSplitScore):
-                    #     sInfo.bestSplitScore = maxScore
-                    #     sInfo.bestSplitParty = partners
-                    #     sInfo.selectedCandidate = bestSplitId
-                    #     sInfo.bestSplittingVector = None # Unknown for AP
-
-                    
-
-                    
-                                
+       
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
@@ -118,20 +103,20 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
             # Receive the secured kernel
             secureKernel = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
-            logger.warning("Received the secure kernel from the active party")
+            logger.info("Received the secure kernel from the active party")
 
             # Compute the secure response and send to the active party
             secureRep = np.array([])
             if(privateSM.size):
                 secureRep = secure_response(privateSM.T, secureKernel)
-                logger.warning("Sent the secure response to the active party")
+                logger.info("Sent the secure response to the active party")
             else:
-                logger.warning("No splitting option feasible. Sent empty splitting matrix the active party")
+                logger.info("No splitting option feasible. Sent empty splitting matrix the active party")
             status = comm.send(secureRep, dest=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
 
             # Receive the optimal splitting information
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)            
-            logger.warning("Received the Splitting Info from the active party") 
+            logger.info("Received the Splitting Info from the active party") 
         
             
         # Post processing, final announcement (optimal splitting vector)
@@ -140,35 +125,4 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
 
 
-    
-
-
-
-# class FedXGBoostSecureHandler:
-#     QR = []
-#     pass
-
-#     def generate_secure_kernel(mat):
-#         import scipy.linalg
-#         return scipy.linalg.qr(mat)
-
-#     def calc_secure_response(privateMat, rxKernelMat):
-#         n = len(rxKernelMat) # n users 
-#         r = len(rxKernelMat[0]) # number of kernel vectors
-#         Z = rxKernelMat
-#         return np.matmul((np.identity(n) - np.matmul(Z, np.transpose(Z))), privateMat)
-
-#     def generate_splitting_matrix(dataVector, quantileBin):
-#         n = len(dataVector) # Rows as n users
-#         l = len(quantileBin) # amount of splitting candidates
-
-#         retSplittingMat = []
-#         for candidateIter in range(l):
-#             v = np.zeros(n)
-#             for userIter in range(n):
-#                 v[userIter] = (dataVector[userIter] > max(quantileBin[candidateIter]))  
-#             retSplittingMat.append(v)
-
-#         return retSplittingMat
-
-
+   

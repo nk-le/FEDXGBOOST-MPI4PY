@@ -4,8 +4,15 @@ from datetime import *
 from math import ceil, log
 import time
 
-from common.Common import SplittingInfo, logger
-from federated_xgboost.XGBoostCommon import XgboostLearningParam
+from config import logger
+from federated_xgboost.XGBoostCommon import XgboostLearningParam, SplittingInfo
+
+class TreeNodeType:
+    ROOT = "Root"
+    LEFT = "Left"
+    RIGHT = "Right"
+    LEAF = "Leaf"
+
 
 class TreeNode:
     def __init__(self, weight = 0.0, leftBranch=None, rightBranch=None):

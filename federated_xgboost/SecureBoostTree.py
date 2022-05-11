@@ -2,10 +2,10 @@ from copy import deepcopy
 import pyclbr
 import numpy as np
 from scipy.linalg import null_space
-from common.Common import logger, rank, comm, PARTY_ID, MSG_ID, SplittingInfo
+from config import logger, rank, comm
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
-from federated_xgboost.XGBoostCommon import compute_splitting_score, get_splitting_score, XgboostLearningParam
+from federated_xgboost.XGBoostCommon import compute_splitting_score, get_splitting_score, XgboostLearningParam, PARTY_ID, SplittingInfo
 from federated_xgboost.FLTree import FLPlainXGBoostTree, FLXGBoostClassifierBase
 
 # Addthe external package for homomorphic encryption scheme
