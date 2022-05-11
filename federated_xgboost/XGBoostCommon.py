@@ -30,5 +30,6 @@ def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, 
 def get_splitting_score(G, H, GL, GR, HL, HR, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):
     score = L(G,H,GL,GR,HL,HR,lamb, gamma)
     return score.reshape(-1)
+ 
 
 

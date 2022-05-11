@@ -2,6 +2,7 @@ from datetime import datetime
 from statistics import mode
 import pandas as pd
 import numpy as np
+from data_structure.DataBaseStructure import QuantileParam
 from federated_xgboost.FLTree import PlainFedXGBoost
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
 from common.Common import PARTY_ID, rank, logger
@@ -250,8 +251,11 @@ try:
     elif CONFIG["model"] == "FedXGBoost":
         model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
 
-    logger.warning("Test Info: \n{0}".format(CONFIG))
-
+    # Log the test case and the parameters
+    logger.warning("TestInfo, {0}".format(CONFIG))
+    logger.warning("XGBoostParameter, nTree: %d, maxDepth: %d, lambda: %f, gamma: %f", 
+    XgboostLearningParam.N_TREES, XgboostLearningParam.MAX_DEPTH, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
+    logger.warning("QuantileParameter, eps: %f, thres: %f", QuantileParam.epsilon, QuantileParam.thres_balance)
 
     # Dataset selection    
     if rank != 0:
@@ -264,26 +268,18 @@ try:
         elif CONFIG["dataset"] == dataset[3]:
             y_pred, y_test, model = test_default_credit_client(model)
         
-        y_pred_org = y_pred.copy()
         if rank == PARTY_ID.ACTIVE_PARTY:
-            y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
-            y_pred_true = y_pred.copy()
-            y_pred[y_pred > 0.5] = 1
-            y_pred[y_pred <= 0.5] = 0
-            result = y_pred - y_test
-            
-            print("Prediction Acc: ", np.sum(result == 0) / y_pred.shape[0])
-            strPred = ""
-            for i in range(len(y_pred)):
-                strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
-            logger.debug("Pred: %s", str(strPred))
-            
-            auc = metrics.roc_auc_score(y_test, y_pred_true)
-            print("AUC", auc)
+            acc, auc = model.evaluate(y_pred, y_test, treeid="FINAL")
 
-            #fScore = metrics.f1_score(y_test, y_pred_true)
-            #print("F1 Score", fScore)
-
+           
+            
+            print("Prediction: ", acc, auc)
+            #strPred = ""
+            # for i in range(len(y_pred)):
+            #     strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
+            # logger.debug("Pred: %s", str(strPred))
+            
+            
             model.log_info()
 
 except Exception as e:

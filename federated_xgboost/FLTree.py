@@ -8,7 +8,7 @@ from federated_xgboost.PerformanceLogger import CommunicationLogger,TimeLogger
 from visualizer.TreeRender import FLVisNode
 from copy import deepcopy
 
-
+from sklearn import metrics
 from federated_xgboost.XGBoostCommon import XgboostLearningParam, compute_splitting_score
 
 
@@ -62,17 +62,32 @@ class FLXGBoostClassifierBase():
             self.excTimeLogger.log_dt_fit(tStartTree) # Log the executed time
 
             tStartPred = TimeLogger.tic()
-            if i == self.nTree - 1: # The last tree, no need for prediction update.
-                continue
-            else:
-                update_pred = self.trees[i].fed_predict(orgData)
+            #if i == self.nTree - 1: # The last tree, no need for prediction update.
+            #    continue
+            #else:
+            update_pred = self.trees[i].fed_predict(orgData)
+            
+
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
                 y_pred += update_pred
-            self.excTimeLogger.log_dt_pred(tStartPred)
 
+                self.evaluate(y_pred, y, i)
+
+            self.excTimeLogger.log_dt_pred(tStartPred)
         self.excTimeLogger.log_end_boosting(tStartBoost)
 
+
+    def evaluate(self, y_pred, y, treeid = None):
+        y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
+        y_pred_true = y_pred.copy()
+        y_pred[y_pred > 0.5] = 1
+        y_pred[y_pred <= 0.5] = 0
+        result = y_pred - y
+        acc = np.sum(result == 0) / y_pred.shape[0]
+        auc = metrics.roc_auc_score(y, y_pred_true)
+        logger.warning("Metrics, treeID: %s, acc: %f, auc: %f", str(treeid), acc, auc)
+        return acc, auc
 
     def predict(self, X, fName = None):
         y_pred = None

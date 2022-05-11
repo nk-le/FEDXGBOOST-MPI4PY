@@ -8,5 +8,5 @@ modelArr = ["PlainFedXGBoost", "FedXGBoost"]
 
 CONFIG = {
   "model": modelArr[0],
-  "dataset": dataset[0],
+  "dataset": dataset[2],
 }
