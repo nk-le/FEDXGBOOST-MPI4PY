@@ -7,15 +7,16 @@ def get_current_time():
     return timeit.default_timer()
 
 class CommunicationLogger:
-    def __init__(self) -> None:
-        self.tx = []
-        self.rx = []
+    def __init__(self, nClients) -> None:
+        self.nClients = nClients
+        self.tx = [[] for i in range(self.nClients)]
+        self.rx = [[] for i in range(self.nClients)]
 
-    def log_nRx(self, nRx):
-        self.rx.append(nRx)
+    def log_nRx(self, nRx, i = 0):
+        self.rx[i].append(nRx)
 
-    def log_nTx(self, nTx):
-        self.tx.append(nTx)
+    def log_nTx(self, nTx, i = 0):
+        self.tx[i].append(nTx)
 
     def log(self):
         logger.warning("Communication, nRx: %s, nTx: %s", str(self.rx), str(self.tx))

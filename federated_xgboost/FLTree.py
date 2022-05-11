@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 from common.BasicTypes import Direction
-from config import  logger, rank, comm
+from config import  N_CLIENTS, logger, rank, comm
+from mpi4py import MPI
 from algo.LossFunction import LeastSquareLoss, LogLoss
 from data_structure.TreeStructure import *
 from data_structure.DataBaseStructure import *
@@ -132,7 +133,7 @@ class FLPlainXGBoostTree():
         self.learningParam = param
         self.root = FLTreeNode()
         self.nNode = 0
-        self.commLogger = CommunicationLogger()
+        self.commLogger = CommunicationLogger(N_CLIENTS)
 
     def fit_fed(self, y, yPred, treeID, qDataBase: QuantiledDataBase):
         logger.info("Tree is growing column-wise. Current column: %d", treeID)
@@ -190,9 +191,12 @@ class FLPlainXGBoostTree():
             
             nprocs = comm.Get_size()
             # Collect all private splitting info from the partners to find the optimal splitting candidates
-            for partners in range(2, nprocs):   
-                rxSM = comm.recv(source = partners, tag = MSG_ID.RAW_SPLITTING_MATRIX)
-                self.commLogger.log_nRx(sys.getsizeof(rxSM))
+            for i in range(2, nprocs):
+                # Receive the Secure Response from the PP
+                stat = MPI.Status()
+                rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = MSG_ID.RAW_SPLITTING_MATRIX, status = stat)
+                logger.info("Received the secure response from the passive party")            
+                self.commLogger.log_nRx(rxSM.size * rxSM.itemsize, stat.Get_source())
 
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:
@@ -200,7 +204,7 @@ class FLPlainXGBoostTree():
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
-                        sInfo.bestSplitParty = partners
+                        sInfo.bestSplitParty = stat.Get_source()
                         sInfo.selectedCandidate = bestSplitId
                         sInfo.isValid = True
                                 
@@ -208,7 +212,6 @@ class FLPlainXGBoostTree():
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
-                self.commLogger.log_nTx(sys.getsizeof(sInfo))
 
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
@@ -243,7 +246,7 @@ class FLPlainXGBoostTree():
         if(rank == sInfo.bestSplitParty):
             sInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
             feature, value = qDataBase.find_fId_and_scId(sInfo.bestSplittingVector)
-
+                
             updateSInfo = deepcopy(sInfo)
             updateSInfo.bestSplittingVector = privateSM[sInfo.selectedCandidate,:]
             nprocs = comm.Get_size()
@@ -269,6 +272,8 @@ class FLPlainXGBoostTree():
         # Assign the unique fed tree id for each nodeand save the splitting info for each node
         currentNode.FID = self.nNode
         self.nNode += 1
+        import time
+        #start_time = time.time()
         sInfo = self.fed_optimal_split_finding(qDataBase)
         sInfo.log()
         currentNode.set_splitting_info(sInfo)
@@ -399,7 +404,7 @@ class FLPlainXGBoostTree():
                 userClassified = rxReqData.userIdList
                 #rxReqData.log()
                 # Find the node and verify that it exists 
-                fedNodePtr = self.root.find_child_node(rxReqData.nodeFedId)                
+                fedNodePtr = self.root.find_child_node(rxReqData.nodeFedId)  
                 # Classify the user according to the current node
                 rep = FedDirResponseInfo(userClassified)
                 # Reply the direction 

@@ -3,6 +3,8 @@ import sys
 import numpy as np
 from scipy.linalg import null_space
 from config import logger, rank, comm
+from mpi4py import MPI
+import time
 
 from federated_xgboost.XGBoostCommon import  PARTY_ID, SplittingInfo
 from data_structure.TreeStructure import *
@@ -20,9 +22,10 @@ class FEDXGBOOST_PARAMETER:
     nMaxResponse = 20
 
 def secure_response(privateX, U):
-    r = np.random.randint(U.shape[1])
-    Z = U[:, np.random.randint(U.shape[1], size=r)]
-    W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
+    # r = np.random.randint(U.shape[1])
+    # Z = U[:, np.random.randint(U.shape[1], size=r)]
+    # W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
+    return privateX
     return np.matmul(W,privateX)
 
 
@@ -41,13 +44,15 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         super().__init__(param)
 
     # Child class declares the privacy optimal split finding
-    def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
+    def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):    
         # Start finding the optimal candidate federatedly
         nprocs = comm.Get_size()
         sInfo = SplittingInfo()
         privateSM = qDataBase.get_merged_splitting_matrix()
 
         if rank == PARTY_ID.ACTIVE_PARTY:
+            startOptimalFinding = time.time()
+            
             if privateSM.size: # check it own candidate
                 score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
                 if(maxScore > 0):
@@ -61,9 +66,11 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
             #print(matGH)
             #q, r = np.linalg.qr(matGH)
+            
             Z = null_space(matGH.T)
             indices = np.random.choice(Z.shape[1], FEDXGBOOST_PARAMETER.nMaxResponse, replace=False)
             Z = Z[:, indices]
+            
             logger.debug("Performed QR decomposition of [G, H])")
             logger.debug("GradHess matrix: %s", str(matGH.T))
             logger.debug("Nullspace matrix: %s", str(Z))
@@ -71,12 +78,14 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                 # Send the Secure kernel to the PP
                 status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
                 #logger.warning("Sent the splitting matrix to the active party")  
-                self.commLogger.log_nTx(sys.getsizeof(Z))
+                self.commLogger.log_nTx(Z.size * Z.itemsize, partners)
 
+            for i in range(2, nprocs):
                 # Receive the Secure Response from the PP
-                rxSR = comm.recv(source=partners, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
+                stat = MPI.Status()
+                rxSR = comm.recv(source=MPI.ANY_SOURCE, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE, status = stat)
                 logger.info("Received the secure response from the passive party")
-                self.commLogger.log_nRx(sys.getsizeof(rxSR))
+                self.commLogger.log_nRx(rxSR.size * rxSR.itemsize, stat.Get_source())
 
                 # Collect all private splitting info from the partners to find the optimal splitting candidates
                 # Find the optimal splitting score iff the splitting matrix is provided
@@ -86,7 +95,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
-                        sInfo.bestSplitParty = partners
+                        sInfo.bestSplitParty = stat.Get_source()
                         sInfo.selectedCandidate = bestSplitId
                         sInfo.isValid = True
                     
@@ -95,6 +104,8 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
 
+            print("Time optimal finding",time.time() - startOptimalFinding)
+        
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix
             privateSM = qDataBase.get_merged_splitting_matrix()
@@ -106,9 +117,11 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             logger.info("Received the secure kernel from the active party")
 
             # Compute the secure response and send to the active party
-            secureRep = np.array([])
+            secureRep = np.array([], dtype=np.float32)
             if(privateSM.size):
+                #compute_time = time.time()
                 secureRep = secure_response(privateSM.T, secureKernel)
+                #print("Secure Response Time", time.time() - compute_time)        
                 logger.info("Sent the secure response to the active party")
             else:
                 logger.info("No splitting option feasible. Sent empty splitting matrix the active party")
@@ -121,6 +134,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             
         # Post processing, final announcement (optimal splitting vector)
         sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
+        
         return sInfo
 
 

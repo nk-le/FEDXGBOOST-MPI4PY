@@ -1,7 +1,7 @@
 
 import pandas as pd
 import numpy as np
-from config import rank
+from config import rank, logger
 
 def get_iris():
     data = pd.read_csv('./dataset/iris.csv').values
@@ -19,6 +19,8 @@ def get_iris():
 
     fName = [['sepal length'],['sepal width'],['pedal length'],['pedal width']]
 
+    
+    
     return X_train, y_train, X_test, y_test, fName
 
 def get_give_me_credits():

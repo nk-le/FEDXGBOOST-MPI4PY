@@ -12,8 +12,22 @@ from data_preprocessing import *
 from federated_xgboost.XGBoostCommon import XgboostLearningParam, PARTY_ID 
 
 
+def log_distribution(y_train, y_test):
+    nTrain = len(y_train)
+    nZeroTrain = np.count_nonzero(y_train == 0)
+    nOneTrain = nTrain - nZeroTrain
+    rTrain = nZeroTrain/nOneTrain
+
+    nTest = len(y_test)
+    nZeroTest = np.count_nonzero(y_test == 0)
+    nOneTest = nTest - nZeroTest
+    rTest = nZeroTest / nOneTest
+    logger.warning("DataDistribution, nTrain: %d, ratioTrain: %f, nTest: %d, ratioTest: %f", nTrain, rTrain, nTest, rTest)
+
+
 def test_iris(model):
     X_train, y_train, X_test, y_test, fName = get_iris()
+    log_distribution(y_train, y_test)
 
     X_train_A = X_train[:, 0].reshape(-1, 1)
     fNameA = fName[0]
@@ -66,6 +80,7 @@ def test_iris(model):
 
 def test_give_me_credits(model):
     X_train, y_train, X_test, y_test, fName = get_give_me_credits()
+    log_distribution(y_train, y_test)
 
     X_train_A = X_train[:, :1]
     fNameA = fName[:1]
@@ -131,6 +146,7 @@ def test_give_me_credits(model):
 
 def test_default_credit_client(model):
     X_train, y_train, X_test, y_test, fName = get_default_credit_client()
+    log_distribution(y_train, y_test)
 
     X_train_A = X_train[:, 0:6]
     fNameA = fName[0:6]
@@ -188,7 +204,8 @@ def test_default_credit_client(model):
 def test_adult(model):
 
     X_train, y_train, X_test, y_test, segment_A, segment_B, segment_C = get_adults()
-
+    log_distribution(y_train, y_test)
+    
     X_train_A = X_train[:, 0:segment_A]
     X_train_B = X_train[:, segment_A:segment_B]
     X_train_C = X_train[:, segment_B:segment_C]
@@ -245,11 +262,12 @@ try:
     logger.setLevel(logging.WARNING)
 
     # Model selection
-    #model = SecureBoostClassifier()
     if CONFIG["model"] == "PlainXGBoost":
         model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
     elif CONFIG["model"] == "FedXGBoost":
         model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
+    elif CONFIG["model"] == "SecureBoost": 
+        model = SecureBoostClassifier(XgboostLearningParam.N_TREES)
 
     # Log the test case and the parameters
     logger.warning("TestInfo, {0}".format(CONFIG))

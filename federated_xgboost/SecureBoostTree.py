@@ -21,19 +21,15 @@ class SECUREBOOST_MSGID:
 
 
 class SecureBoostClassifier(FLXGBoostClassifierBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, nTree = 3):
+        trees = []
+        for _ in range(nTree):
+            tree = PseudoVerticalSecureBoostTree()
+            trees.append(tree)
+        super().__init__(trees)
         
 
-    def assign_tree(self, nTree = 3):
-        trees = []
-        for _ in range(self.nTree):
-            tree = VerticalSecureBoostTree()
-            trees.append(tree)
-        return trees
-
-
-class VerticalSecureBoostTree(FLPlainXGBoostTree):
+class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
     """
     The Federated Learning XGBoost Tree applying homomorphic encryption
     """
@@ -58,10 +54,9 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
                 encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
                 encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
             
-            print("MF", encGArr[0] + encGArr[1])
             logger.info("Encrypted the private gradients [G, H])")
-            #logger.debug("Encrypted Gradient: %s", str(encGArr.T))
-            #logger.debug("Encrypted Hessians: %s", str(encHArr.T))
+            logger.debug("Encrypted Gradient: %s", str(encGArr.T))
+            logger.debug("Encrypted Hessians: %s", str(encHArr.T))
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
                 status = comm.send(encGArr[0], dest = partners, tag = SECUREBOOST_MSGID.ENCRYP_GRADIENT)
@@ -70,6 +65,22 @@ class VerticalSecureBoostTree(FLPlainXGBoostTree):
                 # Receive the Secure Response from the PP
                 rxGL = comm.recv(source=partners, tag = SECUREBOOST_MSGID.ENCRYP_AGGR_GL)
                 rxHL = comm.recv(source=partners, tag = SECUREBOOST_MSGID.ENCRYP_AGGR_HL)
+
+                if(privateSM.size):
+                # Accumulate the encrypted gradients and hessians of the left node for all possible splititing candidates
+                for sc in range(nCandidates):
+                    # for userIndex in range(qDataBase.nUsers):
+                    #     if(privateSM[sc, userIndex] == 0.0):
+                    #         aggGL[sc] += encrG[userIndex]
+                    #         aggHL[sc] += encrH[userIndex]
+                    #aggGL.append(Pyfhel.add(encrG[0] + encrG[1]))
+                    #print(type(encrH[0]), type(encrH[1]))
+                    #aggHL.append(encrH[0] + encrH[1])
+                    pass
+
+                logger.warning("Sent the encrypted aggregate data to the active party")
+            else:
+                logger.warning("No splitting option feasible. Sent empty arr the active party")
 
                 if rxGL.size:
                     G = sum(qDataBase.gradVec)

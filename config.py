@@ -8,18 +8,17 @@ import os
 test_dataset = "GiveMeSomeCredits"
 loss_function = "LogLoss" 
 
-
+modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
-modelArr = ["PlainXGBoost", "FedXGBoost"]
 
 CONFIG = {
-  "model": modelArr[0],
-  "dataset": dataset[0],
+  "model": modelArr[1],
+  "dataset": dataset[2],
 }
 
 
 np.random.seed(10)
-clientNum = 4
+N_CLIENTS = 5
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
