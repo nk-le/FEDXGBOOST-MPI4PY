@@ -12,8 +12,8 @@ modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
-  "model": modelArr[1],
-  "dataset": dataset[2],
+  "model": modelArr[2],
+  "dataset": dataset[0],
 }
 
 

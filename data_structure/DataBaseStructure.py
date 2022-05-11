@@ -15,7 +15,7 @@ class QuantileParam:
 class FeatureData:
     def __init__(self, name, dataVector) -> None:
         self.name = name
-        self.data = np.array(dataVector)
+        self.data = np.array(dataVector, dtype=np.float32)
 
 class QuantiledFeature(FeatureData):
   
