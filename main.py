@@ -1,11 +1,13 @@
 from datetime import datetime
+from pyexpat import model
 from statistics import mode
+import mpi4py
 import pandas as pd
 import numpy as np
 from data_structure.DataBaseStructure import QuantileParam
 from federated_xgboost.FLTree import PlainFedXGBoost
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
-from config import rank, logger
+from config import rank, logger, comm
 from federated_xgboost.SecureBoostTree import SecureBoostClassifier
 
 from data_preprocessing import *
@@ -255,51 +257,77 @@ from sklearn import metrics
 import sys
 from config import CONFIG, dataset
 
-try:
-    import logging
-    #np.set_printoptions(threshold=sys.maxsize)
-    
-    logger.setLevel(logging.WARNING)
 
-    # Model selection
-    if CONFIG["model"] == "PlainXGBoost":
-        model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
-    elif CONFIG["model"] == "FedXGBoost":
-        model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
-    elif CONFIG["model"] == "SecureBoost": 
-        model = SecureBoostClassifier(XgboostLearningParam.N_TREES)
-
-    # Log the test case and the parameters
-    logger.warning("TestInfo, {0}".format(CONFIG))
-    logger.warning("XGBoostParameter, nTree: %d, maxDepth: %d, lambda: %f, gamma: %f", 
-    XgboostLearningParam.N_TREES, XgboostLearningParam.MAX_DEPTH, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
-    logger.warning("QuantileParameter, eps: %f, thres: %f", QuantileParam.epsilon, QuantileParam.thres_balance)
-
-    # Dataset selection    
-    if rank != 0:
-        if CONFIG["dataset"] == dataset[0]:
-            y_pred, y_test, model = test_iris(model)
-        elif CONFIG["dataset"] == dataset[1]:
-            y_pred, y_test, model = test_give_me_credits(model)
-        elif CONFIG["dataset"] == dataset[2]:
-            y_pred, y_test, model = test_adult(model)
-        elif CONFIG["dataset"] == dataset[3]:
-            y_pred, y_test, model = test_default_credit_client(model)
+def main():
+    try:
+        import logging
+        #np.set_printoptions(threshold=sys.maxsize)
         
-        if rank == PARTY_ID.ACTIVE_PARTY:
-            acc, auc = model.evaluate(y_pred, y_test, treeid="FINAL")
+        logger.setLevel(logging.WARNING)
 
-           
-            
-            print("Prediction: ", acc, auc)
-            #strPred = ""
-            # for i in range(len(y_pred)):
-            #     strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
-            # logger.debug("Pred: %s", str(strPred))
-            
-            
-            model.log_info()
+        # Model selection
+        if CONFIG["model"] == "PlainXGBoost":
+            model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
+        elif CONFIG["model"] == "FedXGBoost":
+            model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
+        elif CONFIG["model"] == "SecureBoost": 
+            model = SecureBoostClassifier(XgboostLearningParam.N_TREES)
 
-except Exception as e:
-    logger.error("Exception occurred", exc_info=True)
-    print("Rank ", rank, e)
+        # Log the test case and the parameters
+        logger.warning("TestInfo, {0}".format(CONFIG))
+        logger.warning("XGBoostParameter, nTree: %d, maxDepth: %d, lambda: %f, gamma: %f", 
+        XgboostLearningParam.N_TREES, XgboostLearningParam.MAX_DEPTH, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
+        logger.warning("QuantileParameter, eps: %f, thres: %f", QuantileParam.epsilon, QuantileParam.thres_balance)
+
+        # Dataset selection    
+        if rank != 0:
+            if CONFIG["dataset"] == dataset[0]:
+                y_pred, y_test, model = test_iris(model)
+            elif CONFIG["dataset"] == dataset[1]:
+                y_pred, y_test, model = test_give_me_credits(model)
+            elif CONFIG["dataset"] == dataset[2]:
+                y_pred, y_test, model = test_adult(model)
+            elif CONFIG["dataset"] == dataset[3]:
+                y_pred, y_test, model = test_default_credit_client(model)
+            
+            if rank == PARTY_ID.ACTIVE_PARTY:
+                acc, auc = model.evaluate(y_pred, y_test, treeid="FINAL")
+
+            
+                
+                print("Prediction: ", acc, auc)
+                #strPred = ""
+                # for i in range(len(y_pred)):
+                #     strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
+                # logger.debug("Pred: %s", str(strPred))
+                
+                
+                model.log_info()
+
+    except Exception as e:
+        logger.error("Exception occurred", exc_info=True)
+        print("Rank ", rank, e)
+
+
+
+
+main()
+
+def automated():
+    """
+    Currently not using this because the data synchronization is not yet verified.
+    """
+    modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
+    dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
+
+    try:
+        for i in range (len(modelArr)):
+            CONFIG["model"] = modelArr[i]
+            for j in range(len(dataset)):
+                CONFIG["dataset"] = dataset[j]
+                print("Rank", rank, "Testing", CONFIG["model"], CONFIG["dataset"])
+
+    except Exception as e:
+            logger.error("Exception occurred", exc_info=True)
+            print("Rank ", rank, e)
+        

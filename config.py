@@ -12,10 +12,9 @@ modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
-  "model": modelArr[2],
-  "dataset": dataset[0],
+  "model": modelArr[0],
+  "dataset": dataset[2],
 }
-
 
 np.random.seed(10)
 N_CLIENTS = 5

@@ -63,6 +63,7 @@ class FLXGBoostClassifierBase():
         y = self.label
         y_pred = np.zeros(np.shape(self.label))
         #y_pred = np.ones(np.shape(self.label)) * 0.5
+        y_pred = np.ones(np.shape(self.label))
 
         # Start federated boosting
         tStartBoost = self.excTimeLogger.log_start_boosting()
@@ -70,15 +71,13 @@ class FLXGBoostClassifierBase():
             tStartTree = TimeLogger.tic()    
             # Perform tree boosting
             dataFit = QuantiledDataBase(self.dataBase)
-            self.trees[i].fit_fed(y, y_pred, i, dataFit)
-            self.excTimeLogger.log_dt_fit(tStartTree) # Log the executed time
+            self.trees[i].fit_fed(y, y_pred, dataFit)
+            self.excTimeLogger.log_dt_fit(tStartTree, treeID=i) # Log the executed time
 
             tStartPred = TimeLogger.tic()
-            #if i == self.nTree - 1: # The last tree, no need for prediction update.
-            #    continue
-            #else:
             update_pred = self.trees[i].fed_predict(orgData)
-            
+            self.excTimeLogger.log_dt_pred(tStartPred, treeID=i)
+
 
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
@@ -86,7 +85,6 @@ class FLXGBoostClassifierBase():
 
                 self.evaluate(y_pred, y, i)
 
-            self.excTimeLogger.log_dt_pred(tStartPred)
         self.excTimeLogger.log_end_boosting(tStartBoost)
 
 
@@ -98,7 +96,7 @@ class FLXGBoostClassifierBase():
         result = y_pred - y
         acc = np.sum(result == 0) / y_pred.shape[0]
         auc = metrics.roc_auc_score(y, y_pred_true)
-        logger.warning("Metrics, treeID: %s, acc: %f, auc: %f", str(treeid), acc, auc)
+        logger.warning("Metrics, TreeID: %s, acc: %f, auc: %f", str(treeid), acc, auc)
         return acc, auc
 
     def predict(self, X, fName = None):
@@ -120,8 +118,8 @@ class FLXGBoostClassifierBase():
 class PlainFedXGBoost(FLXGBoostClassifierBase):
     def __init__(self, nTree = 3):
         trees = []
-        for _ in range(nTree):
-            tree = FLPlainXGBoostTree()
+        for i in range(nTree):
+            tree = FLPlainXGBoostTree(i)
             trees.append(tree)
         super().__init__(trees)
 
@@ -129,14 +127,16 @@ class PlainFedXGBoost(FLXGBoostClassifierBase):
 
 
 class FLPlainXGBoostTree():
-    def __init__(self, param:XgboostLearningParam = XgboostLearningParam()):
+    def __init__(self, id, param:XgboostLearningParam = XgboostLearningParam()):
         self.learningParam = param
         self.root = FLTreeNode()
         self.nNode = 0
+        self.treeID = id
+        print("Hello", self.treeID)
         self.commLogger = CommunicationLogger(N_CLIENTS)
 
-    def fit_fed(self, y, yPred, treeID, qDataBase: QuantiledDataBase):
-        logger.info("Tree is growing column-wise. Current column: %d", treeID)
+    def fit_fed(self, y, yPred, qDataBase: QuantiledDataBase):
+        logger.info("Tree is growing column-wise. Current column: %d", self.treeID)
 
         """
         This function computes the gradient and the hessian vectors to perform the tree construction
@@ -165,14 +165,14 @@ class FLPlainXGBoostTree():
 
             # Display the tree in the log file
             b = FLVisNode(self.root)
-            b.display(treeID)
+            b.display(self.treeID)
 
             # Evaluation
             if(rank == 1):
                 newTreeGain = abs(self.root.compute_score())
                 loss = self.learningParam.LOSS_FUNC.diff(y, yPred)
                 print("Loss", abs(loss), "Tree Gain", newTreeGain)
-                logger.warning("Boosting, TreeID %d, Loss: %f, Gain: %f", treeID, abs(loss), abs(newTreeGain))
+                logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", self.treeID, abs(loss), abs(newTreeGain))
     
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Each party studies their own user's distribution and prepare the splitting matrix
@@ -196,7 +196,7 @@ class FLPlainXGBoostTree():
                 stat = MPI.Status()
                 rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = MSG_ID.RAW_SPLITTING_MATRIX, status = stat)
                 logger.info("Received the secure response from the passive party")            
-                self.commLogger.log_nRx(rxSM.size * rxSM.itemsize, stat.Get_source())
+                self.commLogger.log_nRx(rxSM.size * rxSM.itemsize, stat.Get_source(), self.treeID)
 
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:

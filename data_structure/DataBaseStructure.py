@@ -10,7 +10,7 @@ from config import rank, logger
 
 class QuantileParam:
     epsilon = 0.005
-    thres_balance = 0.1
+    thres_balance = 0.2
 
 class FeatureData:
     def __init__(self, name, dataVector) -> None:

@@ -10,12 +10,12 @@ L = lambda G,H, GL, GR, HL, HR, lamb, gamma: 1/2 * ((GL*GL / (HL + lamb)) + (GR*
 class PARTY_ID:
     ACTIVE_PARTY = 1
 
-class XgboostLearningParam:
+class XgboostLearningParam():
     #def __init__(self) -> None:
     LOSS_FUNC = LogLoss()
     LAMBDA = 1
     GAMMA = 0.5
-    N_TREES = 3
+    N_TREES = 10
     MAX_DEPTH = 5
 
 def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):

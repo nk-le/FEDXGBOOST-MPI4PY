@@ -19,29 +19,29 @@ class FEDXGBOOST_MSGID:
     OPTIMAL_SPLITTING_INFO = 203
 
 class FEDXGBOOST_PARAMETER:
-    nMaxResponse = 20
+    nMaxResponse = 30
 
 def secure_response(privateX, U):
-    # r = np.random.randint(U.shape[1])
-    # Z = U[:, np.random.randint(U.shape[1], size=r)]
-    # W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
-    return privateX
+    r = np.random.randint(U.shape[1])
+    Z = U[:, np.random.randint(U.shape[1], size=r)]
+    W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
     return np.matmul(W,privateX)
-
+    return privateX # Plain XGBoost
+    
 
 
 class FedXGBoostClassifier(FLXGBoostClassifierBase):
     def __init__(self, nTree = 3):
         trees = []
-        for _ in range(nTree):
-            tree = VerticalFedXGBoostTree()
+        for i in range(nTree):
+            tree = VerticalFedXGBoostTree(i)
             trees.append(tree)
         super().__init__(trees)
 
 
 class VerticalFedXGBoostTree(FLPlainXGBoostTree):
-    def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):
-        super().__init__(param)
+    def __init__(self, id, param: XgboostLearningParam = XgboostLearningParam()):
+        super().__init__(id, param)
 
     # Child class declares the privacy optimal split finding
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):    
@@ -51,7 +51,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         privateSM = qDataBase.get_merged_splitting_matrix()
 
         if rank == PARTY_ID.ACTIVE_PARTY:
-            startOptimalFinding = time.time()
+            #startOptimalFinding = time.time()
             
             if privateSM.size: # check it own candidate
                 score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
@@ -68,24 +68,27 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             #q, r = np.linalg.qr(matGH)
             
             Z = null_space(matGH.T)
-            indices = np.random.choice(Z.shape[1], FEDXGBOOST_PARAMETER.nMaxResponse, replace=False)
+            # Select half of the coulmn to generate the secure kernel.
+            # TODO: bring the parameters FEDXGBOOST_PARAMETER.nMaxResponse as parameters outside
+            indices = np.random.choice(Z.shape[1], min(FEDXGBOOST_PARAMETER.nMaxResponse, int((qDataBase.nUsers)/2)), replace=False)
             Z = Z[:, indices]
             
             logger.debug("Performed QR decomposition of [G, H])")
             logger.debug("GradHess matrix: %s", str(matGH.T))
             logger.debug("Nullspace matrix: %s", str(Z))
+            nTx = 0
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
                 status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
-                #logger.warning("Sent the splitting matrix to the active party")  
-                self.commLogger.log_nTx(Z.size * Z.itemsize, partners)
+                #logger.warning("Sent the splitting matrix to the active party")         
+                self.commLogger.log_nTx(Z.size * Z.itemsize, partners, self.treeID)
 
             for i in range(2, nprocs):
                 # Receive the Secure Response from the PP
                 stat = MPI.Status()
                 rxSR = comm.recv(source=MPI.ANY_SOURCE, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE, status = stat)
                 logger.info("Received the secure response from the passive party")
-                self.commLogger.log_nRx(rxSR.size * rxSR.itemsize, stat.Get_source())
+                self.commLogger.log_nRx(rxSR.size * rxSR.itemsize, stat.Get_source(), self.treeID)
 
                 # Collect all private splitting info from the partners to find the optimal splitting candidates
                 # Find the optimal splitting score iff the splitting matrix is provided
@@ -104,7 +107,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
 
-            print("Time optimal finding",time.time() - startOptimalFinding)
+            #print("Time optimal finding",time.time() - startOptimalFinding)
         
         elif (rank != 0):           
             # Perform the secure Sharing of the splitting matrix

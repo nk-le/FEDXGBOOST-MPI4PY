@@ -43,7 +43,7 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
         super().__init__(param)
 
         self.HEHandler = Pyfhel()  
-        self.HEHandler.contextGen(p=65537, m=4096, base=3, flagBatching=True)   # Generating context. 
+        self.HEHandler.contextGen(p=65537, m=2048, base=3, flagBatching=True)   # Generating context. 
         self.HEHandler.keyGen()
 
     # Child class declares the privacy optimal split finding
@@ -63,13 +63,14 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
                     sInfo.selectedCandidate = bestSplitId
                     sInfo.bestSplitScore = maxScore
 
-            # Encrypt the gradient and the hessians
+            # Encrypt the gradient and the hessians - This task is also time expensive
             encGArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
             encHArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
             for i in range((qDataBase.nUsers)):
                 encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
                 encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
-           
+            
+
             logger.info("Encrypted the private gradients [G, H])")
             logger.debug("Encrypted Gradient: %s", str(encGArr.T))
             logger.debug("Encrypted Hessians: %s", str(encHArr.T))
@@ -78,8 +79,9 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
 
             # Send to the passive parties
             nTx = 0
-            for i in range((qDataBase.nUsers)):
-                nTx += len(encGArr[i].to_bytes()) + len(encHArr[i].to_bytes())
+            # Calculate the total amount of the transmitted bytes
+            nTx = 2 * qDataBase.nUsers * len(encGArr[i].to_bytes())
+            
             for i in range(2, nprocs):
                 # Pseudo Send to the passive parties
                 self.commLogger.log_nTx(nTx, i)
@@ -93,9 +95,10 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
                     aggGL = np.empty(nCandidates,dtype=PyCtxt)
                     aggHL = np.empty(nCandidates,dtype=PyCtxt)
                     
-                    for sc in range(rxSM.shape[0]):
+                    for sc in range(nCandidates):
                         aggGL[sc] = encGArr[0] - encGArr[0] #PyCtxt()
                         aggHL[sc] = encHArr[0] - encHArr[0] #PyCtxt()
+                        # Aggregate all encrypted data. This is supposed to be performed by the passive parties, but mpi4py does not allow sending too many bytes
                         for userIndex in range(qDataBase.nUsers):
                             if(rxSM[sc, userIndex] == 0.0):
                                 aggGL[sc] += encGArr[userIndex]
@@ -107,6 +110,7 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
                         L = get_splitting_score(G,H,GL,GR,HL,HR)
                         logger.info("Received the encrypted aggregated data from the passive party")
                         scoreList.append(L)
+                    dt = (time.time() - startHEAggre)
 
                     bestSplitId = np.argmax(scoreList)
                     maxScore = scoreList[bestSplitId]
