@@ -3,7 +3,7 @@ from mpi4py import MPI
 import logging
 from datetime import date
 import time 
-import os 
+import os
 
 test_dataset = "GiveMeSomeCredits"
 loss_function = "LogLoss" 
@@ -13,8 +13,14 @@ dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
   "model": modelArr[0],
-  "dataset": dataset[1],
+  "dataset": dataset[2],
 }
+
+class SIM_PARAM:
+  N_SAMPLE = 3e4
+
+
+
 
 np.random.seed(10)
 N_CLIENTS = 5

@@ -16,7 +16,7 @@ class CommunicationLogger:
 
     def log_nRx(self, nRx, i = 0, treeID = 0):
         self.rx[i].append(nRx)
-        logger.warning("CommunicationRX, TreeID: %d, nTx: %s, Partner: %d", treeID, nRx, i)
+        logger.warning("CommunicationRX, TreeID: %d, nRx: %s, Partner: %d", treeID, nRx, i)
 
     def log_nTx(self, nTx, i = 0, treeID = 0):
         self.tx[i].append(nTx)

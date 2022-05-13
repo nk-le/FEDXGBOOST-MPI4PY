@@ -158,7 +158,7 @@ class DataBase:
         for i in range(len(featureName)):
             dataBase.append_feature(FeatureData(featureName[i], dataTable[:,i]))
         
-        return dataBase
+        return dataBase, featureName
 
 class QuantiledDataBase(DataBase):
     def __init__(self, dataBase:DataBase = None) -> None:

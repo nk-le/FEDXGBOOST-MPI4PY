@@ -47,8 +47,8 @@ class FLXGBoostClassifierBase():
         -   dataTable   nxm: <n> users & <m> features
         -   name        mx1: <m> strings
         """
-        self.dataBase = DataBase.data_matrix_to_database(dataTable, fName)
-        logger.warning('Appended data feature %s to database of party %d', str(fName), rank)
+        [self.dataBase, featureName] = DataBase.data_matrix_to_database(dataTable, fName)
+        logger.warning('Appended data feature %s to database of party %d', str(featureName), rank)
 
     def append_label(self, labelVec):
         self.label = np.reshape(labelVec, (len(labelVec), 1))
@@ -61,9 +61,9 @@ class FLXGBoostClassifierBase():
     def boost(self):
         orgData = deepcopy(self.dataBase)
         y = self.label
-        y_pred = np.zeros(np.shape(self.label))
-        #y_pred = np.ones(np.shape(self.label)) * 0.5
-        y_pred = np.ones(np.shape(self.label))
+        y_pred = np.ones(np.shape(self.label)) * 0.5
+        #y_pred = np.ones(np.shape(self.label))
+        #self.evaluate(y_pred, y, 0)
 
         # Start federated boosting
         tStartBoost = self.excTimeLogger.log_start_boosting()
@@ -103,7 +103,7 @@ class FLXGBoostClassifierBase():
         y_pred = None
         data_num = X.shape[0]
         # Make predictions
-        testDataBase = DataBase.data_matrix_to_database(X, fName)
+        [testDataBase, fName] = DataBase.data_matrix_to_database(X, fName)
         for tree in self.trees:
             # Estimate gradient and update prediction
             update_pred = tree.fed_predict(testDataBase)
@@ -132,7 +132,6 @@ class FLPlainXGBoostTree():
         self.root = FLTreeNode()
         self.nNode = 0
         self.treeID = id
-        print("Hello", self.treeID)
         self.commLogger = CommunicationLogger(N_CLIENTS)
 
     def fit_fed(self, y, yPred, qDataBase: QuantiledDataBase):
