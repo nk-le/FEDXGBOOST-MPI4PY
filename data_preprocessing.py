@@ -39,7 +39,7 @@ def get_give_me_credits():
     # Normalize the data
     data = data / data.max(axis=0)
 
-    ratio = 10000 / data.shape[0]
+    ratio = 100000 / data.shape[0]
 
     zero_index = data[:, 0] == 0
     one_index = data[:, 0] == 1
@@ -47,9 +47,13 @@ def get_give_me_credits():
     one_data = data[one_index]
     zero_ratio = len(zero_data) / data.shape[0]
     one_ratio = len(one_data) / data.shape[0]
-    num = 10000
+    num = 100000
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
+
+    # nSel = min(one_data.shape[0], zero_data.shape[0])
+    # train_size_zero = nSel* ratio + 1
+    # train_size_one = nSel * ratio
 
     if rank == 1:
         print("Data Dsitribution")

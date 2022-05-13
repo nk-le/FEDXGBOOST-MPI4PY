@@ -84,7 +84,7 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
             
             for i in range(2, nprocs):
                 # Pseudo Send to the passive parties
-                self.commLogger.log_nTx(nTx, i)
+                self.commLogger.log_nTx(nTx, i, self.treeID)
 
                 stat = MPI.Status()
                 rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = SECUREBOOST_MSGID.RAW_SPLITTING_MATRIX, status = stat)
