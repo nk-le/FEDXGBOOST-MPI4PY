@@ -19,11 +19,12 @@ def pre_config():
     XgboostLearningParam.LOSS_FUNC = LogLoss()
     XgboostLearningParam.GAMMA = 0.5
     XgboostLearningParam.LAMBDA = 1
-    XgboostLearningParam.MAX_DEPTH = 3
-    XgboostLearningParam.N_TREES = 5
     QuantileParam.epsilon = QuantileParam.epsilon
-    QuantileParam.thres_balance = 0.1
-    SIM_PARAM.N_SAMPLE = 3e4
+    QuantileParam.thres_balance = 0.3
+
+    XgboostLearningParam.MAX_DEPTH = 4
+    XgboostLearningParam.N_TREES = 6
+    SIM_PARAM.N_SAMPLE = 1e4
    
 
 def log_distribution(X_train, y_train, y_test):
@@ -254,17 +255,8 @@ def main():
                 y_pred, y_test, model = test_default_credit_client(model)
             
             if rank == PARTY_ID.ACTIVE_PARTY:
-                acc, auc = model.evaluate(y_pred, y_test, treeid="FINAL")
-
-            
-                
+                acc, auc = model.evaluate(y_pred, y_test, treeid="99", printFlag = True)    
                 print("Prediction: ", acc, auc)
-                #strPred = ""
-                # for i in range(len(y_pred)):
-                #     strPred += "{} -> {} >< {} \n".format(y_pred_org[i], y_pred_true[i], y_test[i])
-                # logger.debug("Pred: %s", str(strPred))
-                
-                
                 model.log_info()
 
     except Exception as e:

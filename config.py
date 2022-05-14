@@ -5,9 +5,6 @@ from datetime import date
 import time 
 import os
 
-test_dataset = "GiveMeSomeCredits"
-loss_function = "LogLoss" 
-
 modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
@@ -17,7 +14,7 @@ CONFIG = {
 }
 
 class SIM_PARAM:
-  N_SAMPLE = 3e4
+  N_SAMPLE = None
 
 
 
@@ -32,7 +29,7 @@ day = date.today().strftime("%b-%d-%Y")
 
 curTime = round(time.time())
 
-logName = 'Log/{}/{}_{}_{}/Rank_{}.log'.format(str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
+logName = 'Log/Evaluation/{}/{}_{}_{}/Rank_{}.log'.format(str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
 os.makedirs(os.path.dirname(logName), exist_ok=True)
 
 file_handler = logging.FileHandler(logName, mode='w')

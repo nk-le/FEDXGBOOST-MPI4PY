@@ -39,7 +39,7 @@ def get_give_me_credits():
     # Normalize the data
     data = data / data.max(axis=0)
 
-    ratio = SIM_PARAM.N_SAMPLE / data.shape[0]
+    ratio = min(SIM_PARAM.N_SAMPLE / data.shape[0], 0.8)
 
     zero_index = data[:, 0] == 0
     one_index = data[:, 0] == 1
@@ -50,10 +50,6 @@ def get_give_me_credits():
     num = 10000
     train_size_zero = int(zero_data.shape[0] * ratio) + 1
     train_size_one = int(one_data.shape[0] * ratio)
-
-    # nSel = min(one_data.shape[0], zero_data.shape[0])
-    # train_size_zero = nSel* ratio + 1
-    # train_size_one = nSel * ratio
 
     if rank == 1:
         print("Data Dsitribution")
@@ -90,35 +86,34 @@ def get_default_credit_client():
     
     # Normalize the data
     data = data / data.max(axis=0)
-
-    # Get the ratio of the dataset used for training
-    ratio = SIM_PARAM.N_SAMPLE / data.shape[0]
-
+    ratio = min(SIM_PARAM.N_SAMPLE / data.shape[0], 0.8)
+    
     zero_index = data[:, -1] == 0
     one_index = data[:, -1] == 1
     zero_data = data[zero_index]
     one_data = data[one_index]
-    zero_ratio = len(zero_data) / data.shape[0]
-    one_ratio = len(one_data) / data.shape[0]
+    #trainSize = min(zero_data.shape[0], one_data.shape[0])
+    train_size_zero = int(zero_data.shape[0] * ratio)
+    train_size_one = int(one_data.shape[0] * ratio)
     if rank == 1:
         print("Data Dsitribution")
-        print(zero_ratio, one_ratio)
-    nTest = 8000
-    train_size_zero = int(zero_data.shape[0] * ratio) + 1
-    train_size_one = int(one_data.shape[0] * ratio)
+        print(train_size_zero, train_size_one)
 
+    test_size_one = zero_data.shape[0] - train_size_zero 
+    test_size_zero = one_data.shape[0] - train_size_one
     
+    nTest = data.shape[0] * (1 - ratio)
+    test_size = min(test_size_one, test_size_zero)
 
     X_train = np.concatenate((zero_data[:train_size_zero, :-1], one_data[:train_size_one, :-1]), 0)
                       
-    X_test = np.concatenate((zero_data[train_size_zero:train_size_zero+int(nTest * zero_ratio)+1, :-1], 
-                            one_data[train_size_one:train_size_one+int(nTest * one_ratio), :-1]), 0)
+    X_test = np.concatenate((zero_data[train_size_zero: train_size_zero + test_size_one, :-1], 
+                            one_data[train_size_one: train_size_one + test_size_one, :-1]), 0)
     
     y_train = np.concatenate((zero_data[:train_size_zero, -1].reshape(-1, 1), one_data[:train_size_one, -1].reshape(-1, 1)), 0)
     
-    y_test = np.concatenate((zero_data[train_size_zero:train_size_zero+int(nTest * zero_ratio)+1, -1].reshape(-1, 1),
-                            one_data[train_size_one:train_size_one+int(nTest* one_ratio), -1].reshape(-1, 1)), 0)
-
+    y_test = np.concatenate((zero_data[train_size_zero: train_size_zero + test_size_one, -1].reshape(-1, 1),
+                            one_data[train_size_one: train_size_one + test_size_one, -1].reshape(-1, 1)), 0)
 
 
     fName = ["ID","LIMIT_BAL","SEX","EDUCATION","MARRIAGE","AGE",
@@ -131,22 +126,28 @@ def get_default_credit_client():
 def get_adults():
     data = np.load('./dataset/adult.npy')
     data = data / data.max(axis=0)
-
-    ratio = SIM_PARAM.N_SAMPLE / data.shape[0]
-
+    ratio = min(SIM_PARAM.N_SAMPLE / data.shape[0], 0.8)
     zero_index = data[:, 0] == 0
     one_index = data[:, 0] == 1
     zero_data = data[zero_index]
     one_data = data[one_index]
 
-    zero_ratio = len(zero_data) / data.shape[0]
-    one_ratio = len(one_data) / data.shape[0]
+    train_size_zero = int(zero_data.shape[0] * ratio)
+    train_size_one = int(one_data.shape[0] * ratio)
     if rank == 1:
         print("Data Dsitribution")
-        print(zero_ratio, one_ratio)
+        print(train_size_zero, train_size_one)
 
-    train_size_zero = int(zero_data.shape[0] * ratio) + 1
-    train_size_one = int(one_data.shape[0] * ratio)
+    test_size_one = zero_data.shape[0] - train_size_zero 
+    test_size_zero = one_data.shape[0] - train_size_one
+
+    # Use this to test training data with the same distribution
+    # trainSize = min(zero_data.shape[0], one_data.shape[0])
+    # train_size_zero = int(trainSize * 2 * ratio) + 1
+    # train_size_one = int(trainSize * ratio)
+    # if rank == 1:
+    #     print("Data Dsitribution")
+    #     print(train_size_zero, train_size_one)
 
     X_train, X_test = np.concatenate((zero_data[:train_size_zero, 1:], one_data[:train_size_one, 1:]), 0), \
                       np.concatenate((zero_data[train_size_zero:, 1:], one_data[train_size_one:, 1:]), 0)

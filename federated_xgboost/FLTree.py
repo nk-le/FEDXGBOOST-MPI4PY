@@ -71,7 +71,7 @@ class FLXGBoostClassifierBase():
             tStartTree = TimeLogger.tic()    
             # Perform tree boosting
             dataFit = QuantiledDataBase(self.dataBase)
-            self.trees[i].fit_fed(y, y_pred, dataFit)
+            isValid = self.trees[i].fit_fed(y, y_pred, dataFit)
             self.excTimeLogger.log_dt_fit(tStartTree, treeID=i) # Log the executed time
 
             tStartPred = TimeLogger.tic()
@@ -85,10 +85,13 @@ class FLXGBoostClassifierBase():
 
                 self.evaluate(y_pred, y, i)
 
+            if not isValid:
+                break
+
         self.excTimeLogger.log_end_boosting(tStartBoost)
 
 
-    def evaluate(self, y_pred, y, treeid = None):
+    def evaluate(self, y_pred, y, treeid = None, printFlag = False):
         y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
         y_pred_true = y_pred.copy()
         y_pred[y_pred > 0.5] = 1
@@ -97,6 +100,12 @@ class FLXGBoostClassifierBase():
         acc = np.sum(result == 0) / y_pred.shape[0]
         auc = metrics.roc_auc_score(y, y_pred_true)
         logger.warning("Metrics, TreeID: %s, acc: %f, auc: %f", str(treeid), acc, auc)
+
+        if(printFlag):
+            strPred = ""
+            for i in range(len(y_pred)):
+                strPred += "Validating, prob:{}, pred:{}, true:{}\n".format(y_pred_true[i], y_pred[i], y[i])
+            logger.warning("%s", str(strPred))
         return acc, auc
 
     def predict(self, X, fName = None):
@@ -172,6 +181,11 @@ class FLPlainXGBoostTree():
                 loss = self.learningParam.LOSS_FUNC.diff(y, yPred)
                 print("Loss", abs(loss), "Tree Gain", newTreeGain)
                 logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", self.treeID, abs(loss), abs(newTreeGain))
+
+            if(not self.root.is_leaf()):
+                return True
+
+        return False
     
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Each party studies their own user's distribution and prepare the splitting matrix

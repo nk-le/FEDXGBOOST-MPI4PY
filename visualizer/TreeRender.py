@@ -18,7 +18,7 @@ class FLVisNode():
 
     def display(self, treeID):
         lines, *_ = self._display_aux()
-        logger.warning("Structure of tree %d", treeID)
+        logger.warning("TreeStructure, TreeID: %d", treeID)
         for line in lines:
             logger.warning("%s", line)
         

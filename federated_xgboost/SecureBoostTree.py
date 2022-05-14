@@ -78,9 +78,8 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
             H = sum(qDataBase.hessVec)
 
             # Send to the passive parties
-            nTx = 0
             # Calculate the total amount of the transmitted bytes
-            nTx = 2 * qDataBase.nUsers * len(encGArr[i].to_bytes())
+            nTx = 2 * qDataBase.nUsers * len(encGArr[i].to_bytes()) # Sending g and h --> multiplies by 2, Rx is neglectable
             
             for i in range(2, nprocs):
                 # Pseudo Send to the passive parties
@@ -110,7 +109,6 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
                         L = get_splitting_score(G,H,GL,GR,HL,HR)
                         logger.info("Received the encrypted aggregated data from the passive party")
                         scoreList.append(L)
-                    dt = (time.time() - startHEAggre)
 
                     bestSplitId = np.argmax(scoreList)
                     maxScore = scoreList[bestSplitId]
