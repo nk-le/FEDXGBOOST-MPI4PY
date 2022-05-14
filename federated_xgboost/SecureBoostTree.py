@@ -29,8 +29,8 @@ class SECUREBOOST_MSGID:
 class SecureBoostClassifier(FLXGBoostClassifierBase):
     def __init__(self, nTree = 3):
         trees = []
-        for _ in range(nTree):
-            tree = PseudoVerticalSecureBoostTree()
+        for i in range(nTree):
+            tree = PseudoVerticalSecureBoostTree(i)
             trees.append(tree)
         super().__init__(trees)
         
@@ -39,11 +39,11 @@ class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
     """
     The Federated Learning XGBoost Tree applying homomorphic encryption
     """
-    def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):
-        super().__init__(param)
+    def __init__(self, id, param: XgboostLearningParam = XgboostLearningParam()):
+        super().__init__(id, param)
 
         self.HEHandler = Pyfhel()  
-        self.HEHandler.contextGen(p=65537, m=2048, base=3, flagBatching=True)   # Generating context. 
+        self.HEHandler.contextGen(p=65537, m=1024, base=3, flagBatching=True)   # Generating context. 
         self.HEHandler.keyGen()
 
     # Child class declares the privacy optimal split finding

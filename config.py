@@ -9,13 +9,20 @@ modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
-  "model": modelArr[0],
-  "dataset": dataset[2],
+  "model": modelArr[2],
+  "dataset": dataset[1],
 }
 
 class SIM_PARAM:
-  N_SAMPLE = None
+  N_SAMPLE = int(2e4)
 
+"""
+Testing: nUsers
+Dataset: GivemeCredits
+N: 10k, 20k, 30k, 50k, 80k 120
+
+"""
+TEST_CASE = "NUSERS_GivemeCredits"
 
 
 
@@ -29,7 +36,7 @@ day = date.today().strftime("%b-%d-%Y")
 
 curTime = round(time.time())
 
-logName = 'Log/Evaluation/{}/{}_{}_{}/Rank_{}.log'.format(str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
+logName = 'Log/Test_{}/{}/{}_{}_{}/Rank_{}.log'.format(TEST_CASE, str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
 os.makedirs(os.path.dirname(logName), exist_ok=True)
 
 file_handler = logging.FileHandler(logName, mode='w')

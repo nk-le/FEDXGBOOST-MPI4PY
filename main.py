@@ -22,10 +22,9 @@ def pre_config():
     QuantileParam.epsilon = QuantileParam.epsilon
     QuantileParam.thres_balance = 0.3
 
-    XgboostLearningParam.MAX_DEPTH = 4
-    XgboostLearningParam.N_TREES = 6
-    SIM_PARAM.N_SAMPLE = 1e4
-   
+    XgboostLearningParam.N_TREES = 6    
+    XgboostLearningParam.MAX_DEPTH = 3
+
 
 def log_distribution(X_train, y_train, y_test):
     nTrain = len(y_train)
@@ -255,9 +254,9 @@ def main():
                 y_pred, y_test, model = test_default_credit_client(model)
             
             if rank == PARTY_ID.ACTIVE_PARTY:
+                model.log_info()
                 acc, auc = model.evaluate(y_pred, y_test, treeid="99", printFlag = True)    
                 print("Prediction: ", acc, auc)
-                model.log_info()
 
     except Exception as e:
         logger.error("Exception occurred", exc_info=True)

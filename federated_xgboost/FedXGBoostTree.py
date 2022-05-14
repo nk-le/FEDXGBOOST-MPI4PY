@@ -63,9 +63,6 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
             # Perform the QR Decomposition
             matGH = np.concatenate((qDataBase.gradVec, qDataBase.hessVec), axis=1)
-
-            #print(matGH)
-            #q, r = np.linalg.qr(matGH)
             
             Z = null_space(matGH.T)
             # Select half of the coulmn to generate the secure kernel.

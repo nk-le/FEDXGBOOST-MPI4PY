@@ -204,13 +204,14 @@ class FLPlainXGBoostTree():
             
             nprocs = comm.Get_size()
             # Collect all private splitting info from the partners to find the optimal splitting candidates
+            # Plain XGBoost - no security concerns
             for i in range(2, nprocs):
                 # Receive the Secure Response from the PP
                 stat = MPI.Status()
                 rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = MSG_ID.RAW_SPLITTING_MATRIX, status = stat)
                 logger.info("Received the secure response from the passive party")            
                 self.commLogger.log_nRx(rxSM.size * rxSM.itemsize, stat.Get_source(), self.treeID)
-
+                self.commLogger.log_nTx(qDataBase.gradVec.size * 2 * qDataBase.gradVec.itemsize, stat.Get_source(), self.treeID) # Pseudo Sending [g,h]
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:
                     score, maxScore, bestSplitId = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec)
