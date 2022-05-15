@@ -4,17 +4,26 @@ import logging
 from datetime import date
 import time 
 import os
+import matlab.engine
 
-modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
-dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
+mlEngine = matlab.engine.start_matlab()
+s = mlEngine.genpath('matlab_algo/receursive-nystrom')
+mlEngine.addpath(s, nargout = 0)
+s = mlEngine.genpath('matlab_algo/')
+mlEngine.addpath(s, nargout = 0)
+
+
+modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost"]
+dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 
 CONFIG = {
-  "model": modelArr[2],
-  "dataset": dataset[1],
+  "model": modelArr[1],
+  "dataset": dataset[0],
 }
 
 class SIM_PARAM:
-  N_SAMPLE = int(2e4)
+  N_SAMPLE = int(1e3)
+  N_FEATURE = int(1500)
 
 """
 Testing: nUsers
@@ -22,7 +31,7 @@ Dataset: GivemeCredits
 N: 10k, 20k, 30k, 50k, 80k 120
 
 """
-TEST_CASE = "NUSERS_GivemeCredits"
+TEST_CASE = "NFEATURE_AugData"
 
 
 

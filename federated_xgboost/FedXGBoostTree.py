@@ -12,6 +12,10 @@ from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
 from federated_xgboost.FLTree import FLXGBoostClassifierBase, FLPlainXGBoostTree
 
+from config import mlEngine
+
+import matlab.engine
+
 class FEDXGBOOST_MSGID:
     SECURE_KERNEL = 200
     SECURE_RESPONSE = 201
@@ -22,12 +26,35 @@ class FEDXGBOOST_PARAMETER:
     nMaxResponse = 30
 
 def secure_response(privateX, U):
+    return secure_response_lra_rn(privateX, U)
+
+def secure_response_plain(privateX, U):
     r = np.random.randint(U.shape[1])
     Z = U[:, np.random.randint(U.shape[1], size=r)]
     W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
     return np.matmul(W,privateX)
     return privateX # Plain XGBoost
     
+def secure_response_lra_rn(privateX, U):
+    r = np.random.randint(U.shape[1])
+    Z = U[:, np.random.randint(U.shape[1], size=r)]
+    X = matlab.double(Z)
+    [C,W] = mlEngine.nystrom_wrapper(X, nargout=2)
+    return secure_response_plain(privateX, U)
+
+
+def secure_response_lra_un(privateX, U):
+    r = np.random.randint(U.shape[1])
+    Z = U[:, np.random.randint(U.shape[1], size=r)]
+    s = 10
+    #kernelFunc = lambda x,y: sum(x*y)
+    from algo.RecursiveNystrom import uniformNystrom
+    
+    [C,W] = uniformNystrom(Z, s)
+
+    K = np.matmul(np.matmul(C, W), W.transpose())
+    print(K.shape, privateX.shape)
+    return privateX - np.matmul(K, privateX)
 
 
 class FedXGBoostClassifier(FLXGBoostClassifierBase):

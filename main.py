@@ -9,7 +9,7 @@ from data_structure.DataBaseStructure import QuantileParam
 from federated_xgboost.FLTree import PlainFedXGBoost
 from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
 from config import rank, logger, comm
-from federated_xgboost.SecureBoostTree import SecureBoostClassifier
+from federated_xgboost.SecureBoostTree import PseudoSecureBoostClassifier, SecureBoostClassifier
 
 from data_preprocessing import *
 from federated_xgboost.XGBoostCommon import XgboostLearningParam, PARTY_ID 
@@ -22,7 +22,7 @@ def pre_config():
     QuantileParam.epsilon = QuantileParam.epsilon
     QuantileParam.thres_balance = 0.3
 
-    XgboostLearningParam.N_TREES = 6    
+    XgboostLearningParam.N_TREES = 1    
     XgboostLearningParam.MAX_DEPTH = 3
 
 
@@ -84,6 +84,41 @@ def test_iris(model):
         y_pred = model.predict(X_test_C, fNameC)
     elif rank == 4:
         y_pred = model.predict(X_test_D, fNameD)
+    else:
+        model.predict(np.zeros_like(X_test_A))
+
+    y_pred_org = y_pred.copy()
+
+    return y_pred_org, y_test, model
+
+def test_aug_data(model):
+    X_train, y_train, X_test, y_test, fName = get_data_augment()
+    log_distribution(X_train, y_train, y_test)
+
+    X_train_A = X_train[:, :2]
+    X_test_A = X_test[:, :2]
+
+    X_train_B = X_train[:, 2:]    
+    X_test_B = X_test[:, 2:]
+   
+    if rank == 1:
+        model.append_data(X_train_A)
+        model.append_label(y_train)
+    elif rank == 2:
+        #print("Test", len(X_train_B), len(X_train_B[0]), len(y_train), len(y_train[0]))
+        model.append_data(X_train_B)
+        model.append_label(np.zeros_like(y_train))
+    else:
+        model.append_data(X_train_A)
+        model.append_label(np.zeros_like(y_train))
+
+    model.print_info()
+    model.boost()
+    
+    if rank == 1:
+        y_pred = model.predict(X_test_A)
+    elif rank == 2:
+        y_pred = model.predict(X_test_B)
     else:
         model.predict(np.zeros_like(X_test_A))
 
@@ -235,6 +270,9 @@ def main():
             model = FedXGBoostClassifier(XgboostLearningParam.N_TREES)
         elif CONFIG["model"] == "SecureBoost": 
             model = SecureBoostClassifier(XgboostLearningParam.N_TREES)
+        elif CONFIG["model"] == "PseudoSecureBoost":
+            model = PseudoSecureBoostClassifier(XgboostLearningParam.N_TREES)
+
 
         # Log the test case and the parameters
         logger.warning("TestInfo, {0}".format(CONFIG))
@@ -252,7 +290,8 @@ def main():
                 y_pred, y_test, model = test_adult(model)
             elif CONFIG["dataset"] == dataset[3]:
                 y_pred, y_test, model = test_default_credit_client(model)
-            
+            elif CONFIG["dataset"] == dataset[4]:
+                y_pred, y_test, model = test_aug_data(model)
             if rank == PARTY_ID.ACTIVE_PARTY:
                 model.log_info()
                 acc, auc = model.evaluate(y_pred, y_test, treeid="99", printFlag = True)    
@@ -271,7 +310,7 @@ def automated():
     """
     Currently not using this because the data synchronization is not yet verified.
     """
-    modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
+    modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost"]
     dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
     try:

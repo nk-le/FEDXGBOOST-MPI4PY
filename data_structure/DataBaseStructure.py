@@ -1,3 +1,6 @@
+from distutils.log import ERROR
+from logging import raiseExceptions
+from multiprocessing.sharedctypes import Value
 from tokenize import String
 from matplotlib.pyplot import sca
 import numpy as np
@@ -9,7 +12,7 @@ from federated_xgboost.XGBoostCommon import SplittingInfo
 from config import rank, logger
 
 class QuantileParam:
-    epsilon = 0.005
+    epsilon = 0.01
     thres_balance = 0.2
 
 class FeatureData:
@@ -151,8 +154,10 @@ class DataBase:
         nFeatures = len(dataTable[0])
         if(featureName is None):
             featureName = ["Rank_{}_Feature_".format(rank) + str(i) for i in range(nFeatures)]
-        
-        assert (len(featureName) is nFeatures) # The total amount of columns must match the assigned name 
+
+        if(len(featureName) != nFeatures):
+            raise ValueError("Wrong amount of features")
+            assert (len(featureName) is nFeatures) # The total amount of columns must match the assigned name 
         
         dataBase = DataBase()
         for i in range(len(featureName)):

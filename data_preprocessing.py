@@ -163,3 +163,37 @@ def get_adults():
     return X_train, y_train, X_test, y_test, segment_A, segment_B, segment_C
 
     
+
+def get_data_augment():
+    data = np.random.rand(SIM_PARAM.N_SAMPLE * 2, SIM_PARAM.N_FEATURE)
+    label = np.random.randint(2, size=SIM_PARAM.N_SAMPLE * 2)
+    
+    # Normalize the data
+    data = data / data.max(axis=0)
+
+    ratio = SIM_PARAM.N_SAMPLE / data.shape[0]
+
+    zero_index = label == 0
+    one_index = label == 1
+    zero_data = data[zero_index]
+    one_data = data[one_index]
+    zero_label = label[zero_index]
+    one_label = label[one_index]
+
+    zero_ratio = len(zero_data) / data.shape[0]
+    one_ratio = len(one_data) / data.shape[0]
+    
+    train_size_zero = int(zero_data.shape[0] * ratio)
+    train_size_one = int(one_data.shape[0] * ratio)
+
+    if rank == 1:
+        print("Data Dsitribution")
+        print(zero_ratio, one_ratio)
+
+    X_train, X_test = np.concatenate((zero_data[:train_size_zero, 0:], one_data[:train_size_one, 0:]), 0), \
+                      np.concatenate((zero_data[train_size_zero:, 0:], one_data[train_size_one:, 0:]), 0)
+    y_train, y_test = np.concatenate((zero_label[:train_size_zero].reshape(-1, 1), one_label[:train_size_one].reshape(-1, 1)), 0), \
+                      np.concatenate((zero_label[train_size_zero:].reshape(-1, 1), one_label[train_size_one:].reshape(-1, 1)), 0)
+
+    print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)
+    return X_train, y_train, X_test, y_test, None
