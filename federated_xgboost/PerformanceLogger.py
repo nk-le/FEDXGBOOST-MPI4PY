@@ -1,7 +1,5 @@
 import timeit
 
-from sklearn import tree
-
 from config import logger, rank
 
 

@@ -1,7 +1,9 @@
 from copy import deepcopy
 import sys
+from warnings import catch_warnings
 import numpy as np
 from scipy.linalg import null_space
+from algo.generate_random_nullspace import get_approx_nullspace
 from config import logger, rank, comm
 from mpi4py import MPI
 import time
@@ -12,9 +14,10 @@ from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
 from federated_xgboost.FLTree import FLXGBoostClassifierBase, FLPlainXGBoostTree
 
-from config import mlEngine
+from config import CONFIG
 
-import matlab.engine
+#import matlab.engine
+#from sklearn.preprocessing import normalize
 
 class FEDXGBOOST_MSGID:
     SECURE_KERNEL = 200
@@ -23,38 +26,54 @@ class FEDXGBOOST_MSGID:
     OPTIMAL_SPLITTING_INFO = 203
 
 class FEDXGBOOST_PARAMETER:
+    nMaxSecureKernel = 50
     nMaxResponse = 30
 
 def secure_response(privateX, U):
-    return secure_response_lra_rn(privateX, U)
+    return secure_response_fast(privateX, U)
+
+def plain_response(privateX, U):
+    print("testing", privateX.shape)
+    return privateX
+
 
 def secure_response_plain(privateX, U):
     r = np.random.randint(U.shape[1])
     Z = U[:, np.random.randint(U.shape[1], size=r)]
     W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
-    return np.matmul(W,privateX)
-    return privateX # Plain XGBoost
+    ret = np.matmul(W,privateX)
+    return ret
     
-def secure_response_lra_rn(privateX, U):
+def secure_response_fast(privateX, U):
     r = np.random.randint(U.shape[1])
     Z = U[:, np.random.randint(U.shape[1], size=r)]
-    X = matlab.double(Z)
-    [C,W] = mlEngine.nystrom_wrapper(X, nargout=2)
-    return secure_response_plain(privateX, U)
+    N = np.random.randint(10, size = (r,privateX.shape[1]))
+    #print(Z.shape, N.shape, privateX.shape, U.shape)
+    return privateX - np.matmul(Z,N)
 
+# def secure_response_lra_rn(privateX, U):
+#     r = np.random.randint(U.shape[1])
+#     Z = U[:, np.random.randint(U.shape[1], size=r)]
+#     Z = normalize(Z, axis=1, norm='l1')
+#     X = matlab.double(Z)
+#     from config import mlEngine
+#     [C,W,L] = mlEngine.nystrom_wrapper(X, nargout=3)
+#     C = np.asarray(C)
+#     W = np.asarray(W)
+#     L = np.asarray(L)
+#     try:
+#         #L = np.linalg.cholesky(W)
+#         CT_M = np.matmul(C.T, privateX)
+#         LT_CT_M = np.matmul(L.T, CT_M)
+#         W_CT_M = np.matmul(L, LT_CT_M)
+#         KM = np.matmul(C, W_CT_M)
+#     except Exception as e:
+#         print(e)
+#         lamb = np.linalg.eig(W)
+#         #print(lamb)
 
-def secure_response_lra_un(privateX, U):
-    r = np.random.randint(U.shape[1])
-    Z = U[:, np.random.randint(U.shape[1], size=r)]
-    s = 10
-    #kernelFunc = lambda x,y: sum(x*y)
-    from algo.RecursiveNystrom import uniformNystrom
-    
-    [C,W] = uniformNystrom(Z, s)
-
-    K = np.matmul(np.matmul(C, W), W.transpose())
-    print(K.shape, privateX.shape)
-    return privateX - np.matmul(K, privateX)
+#     return privateX - KM
+#     return secure_response_plain(privateX, U)
 
 
 class FedXGBoostClassifier(FLXGBoostClassifierBase):
@@ -90,22 +109,30 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
             # Perform the QR Decomposition
             matGH = np.concatenate((qDataBase.gradVec, qDataBase.hessVec), axis=1)
-            
-            Z = null_space(matGH.T)
-            # Select half of the coulmn to generate the secure kernel.
-            # TODO: bring the parameters FEDXGBOOST_PARAMETER.nMaxResponse as parameters outside
-            indices = np.random.choice(Z.shape[1], min(FEDXGBOOST_PARAMETER.nMaxResponse, int((qDataBase.nUsers)/2)), replace=False)
-            Z = Z[:, indices]
-            
+            # for i in range(10):
+            #     tmp =np.random.randint(10, size = (qDataBase.nUsers,1))
+            #     matGH = np.concatenate((matGH, tmp), axis=1)
+
+
+            # ATTENTION: using nullspace directly is not scalable. We use the get_approx_nullspace() instead
+            # Z = null_space(matGH.T)
+            # # TODO: bring the parameters FEDXGBOOST_PARAMETER.nMaxResponse as parameters outside
+            # indices = np.random.choice(Z.shape[1], min(FEDXGBOOST_PARAMETER.nMaxResponse, int((qDataBase.nUsers)/2)), replace=False)
+            # Z = Z[:, indices]
+            # #print(Z)
+
+            # Select set of coulmn vectors to generate the secure kernel.
+            Z = get_approx_nullspace(matGH.T, rRandomSelected = int(FEDXGBOOST_PARAMETER.nMaxSecureKernel * 2), nOut = FEDXGBOOST_PARAMETER.nMaxSecureKernel)
+
             logger.debug("Performed QR decomposition of [G, H])")
             logger.debug("GradHess matrix: %s", str(matGH.T))
             logger.debug("Nullspace matrix: %s", str(Z))
             nTx = 0
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
+                self.commLogger.log_nTx(Z.size * Z.itemsize, partners, self.treeID)
                 status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
                 #logger.warning("Sent the splitting matrix to the active party")         
-                self.commLogger.log_nTx(Z.size * Z.itemsize, partners, self.treeID)
 
             for i in range(2, nprocs):
                 # Receive the Secure Response from the PP

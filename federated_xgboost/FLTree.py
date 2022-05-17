@@ -287,8 +287,9 @@ class FLPlainXGBoostTree():
         currentNode.FID = self.nNode
         self.nNode += 1
         import time
-        #start_time = time.time()
+        start_time = time.time()
         sInfo = self.fed_optimal_split_finding(qDataBase)
+        #print("Split Finding Time", time.time()-start_time)
         sInfo.log()
         currentNode.set_splitting_info(sInfo)
 
@@ -326,7 +327,9 @@ class FLPlainXGBoostTree():
             currentNode.rightBranch = None
 
             logger.info("Splitting candidate is not feasible. Terminate the tree growing and generate the leaf with weight Leaf Weight: %f", currentNode.weight)
-            
+
+        #print("Grow Time:", time.time() - start_time)
+
     def fed_predict(self, database: DataBase): # Encapsulated for many data
         """
         Data matrix has the same format as the data appended to the database, includes the features' values

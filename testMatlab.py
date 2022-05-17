@@ -14,15 +14,15 @@ def test_recursive_nystrom(X):
     # generate random test matrix
     X = matlab.double(X)
     [C,W] = mlEngine.nystrom_wrapper(X, nargout=2)
-    print("Hi")
 
 
 
-myVec = np.random.random((5,2))
+myVec = np.random.random((100,5))
 myMat = np.matmul(myVec, myVec.transpose())
 
 
-test_recursive_nystrom(myMat)
+test_recursive_nystrom(myVec)
+print("Hi")
 
 
     # // K = matlab.double(X)

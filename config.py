@@ -4,26 +4,20 @@ import logging
 from datetime import date
 import time 
 import os
-import matlab.engine
-
-mlEngine = matlab.engine.start_matlab()
-s = mlEngine.genpath('matlab_algo/receursive-nystrom')
-mlEngine.addpath(s, nargout = 0)
-s = mlEngine.genpath('matlab_algo/')
-mlEngine.addpath(s, nargout = 0)
+#import matlab.engine
 
 
-modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost"]
+modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost", "FedXGBoost-Nys"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 
 CONFIG = {
   "model": modelArr[1],
-  "dataset": dataset[0],
+  "dataset": dataset[4],
 }
 
 class SIM_PARAM:
   N_SAMPLE = int(1e3)
-  N_FEATURE = int(1500)
+  N_FEATURE = int(3500)
 
 """
 Testing: nUsers
@@ -31,7 +25,7 @@ Dataset: GivemeCredits
 N: 10k, 20k, 30k, 50k, 80k 120
 
 """
-TEST_CASE = "NFEATURE_AugData"
+TEST_CASE = "NFEATURE_AugData" # NFEATURE_AugData", ACCELERATE_FEDXGBOOST_FAST_RESPONSE_SECURE
 
 
 
@@ -55,3 +49,10 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
+
+
+# mlEngine = matlab.engine.start_matlab()
+# s = mlEngine.genpath('matlab_algo/receursive-nystrom')
+# mlEngine.addpath(s, nargout = 0)
+# s = mlEngine.genpath('matlab_algo/')
+# mlEngine.addpath(s, nargout = 0)
