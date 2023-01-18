@@ -4,6 +4,7 @@ import logging
 from datetime import date
 import time 
 import os
+import random
 #import matlab.engine
 
 
@@ -12,12 +13,12 @@ dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 
 CONFIG = {
   "model": modelArr[1],
-  "dataset": dataset[4],
+  "dataset": dataset[1],
 }
 
 class SIM_PARAM:
-  N_SAMPLE = int(1e3)
-  N_FEATURE = int(3500)
+  N_SAMPLE = int(8e4)
+  N_FEATURE = int(10)
 
 """
 Testing: nUsers
@@ -25,11 +26,11 @@ Dataset: GivemeCredits
 N: 10k, 20k, 30k, 50k, 80k 120
 
 """
-TEST_CASE = "NFEATURE_AugData" # NFEATURE_AugData", ACCELERATE_FEDXGBOOST_FAST_RESPONSE_SECURE
+TEST_CASE = "LAMBDA_GAMMA" # NFEATURE_AugData", ACCELERATE_FEDXGBOOST_FAST_RESPONSE_SECURE
 
 
 
-np.random.seed(10)
+random.seed(10)
 N_CLIENTS = 5
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -47,10 +48,12 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - [%(filename)s:%(lin
 formatter = logging.Formatter('%(levelname)s - [%(filename)s:%(lineno)s - %(funcName)s] %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
-
+np.set_printoptions(linewidth=np.inf)
+#np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+np.set_printoptions(precision=4, suppress=True)
 # mlEngine = matlab.engine.start_matlab()
 # s = mlEngine.genpath('matlab_algo/receursive-nystrom')
 # mlEngine.addpath(s, nargout = 0)

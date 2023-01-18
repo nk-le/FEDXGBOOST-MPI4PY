@@ -7,7 +7,7 @@ import numpy as np
 from algo.LossFunction import LeastSquareLoss, LogLoss
 from data_structure.DataBaseStructure import QuantileParam
 from federated_xgboost.FLTree import PlainFedXGBoost
-from federated_xgboost.FedXGBoostTree import FedXGBoostClassifier
+from federated_xgboost.FedXGBoostTree import FEDXGBOOST_PARAMETER, FedXGBoostClassifier
 from config import rank, logger, comm
 from federated_xgboost.SecureBoostTree import PseudoSecureBoostClassifier, SecureBoostClassifier
 
@@ -22,8 +22,8 @@ def pre_config():
     QuantileParam.epsilon = QuantileParam.epsilon
     QuantileParam.thres_balance = 0.3
 
-    XgboostLearningParam.N_TREES = 1    
-    XgboostLearningParam.MAX_DEPTH = 3
+    XgboostLearningParam.N_TREES = 8    
+    XgboostLearningParam.MAX_DEPTH = 6
 
 
 def log_distribution(X_train, y_train, y_test):
@@ -258,11 +258,6 @@ def main():
     try:
         pre_config()
 
-        import logging
-        #np.set_printoptions(threshold=sys.maxsize)
-        
-        logger.setLevel(logging.WARNING)
-
         # Model selection
         if CONFIG["model"] == "PlainXGBoost":
             model = PlainFedXGBoost(XgboostLearningParam.N_TREES)
@@ -279,7 +274,6 @@ def main():
         logger.warning("XGBoostParameter, nTree: %d, maxDepth: %d, lambda: %f, gamma: %f", 
         XgboostLearningParam.N_TREES, XgboostLearningParam.MAX_DEPTH, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
         logger.warning("QuantileParameter, eps: %f, thres: %f", QuantileParam.epsilon, QuantileParam.thres_balance)
-
         # Dataset selection    
         if rank != 0:
             if CONFIG["dataset"] == dataset[0]:

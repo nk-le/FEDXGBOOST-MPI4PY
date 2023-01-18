@@ -14,10 +14,16 @@ from data_structure.DataBaseStructure import *
 from federated_xgboost.XGBoostCommon import compute_splitting_score, XgboostLearningParam
 from federated_xgboost.FLTree import FLXGBoostClassifierBase, FLPlainXGBoostTree
 
-from config import CONFIG
+from config import CONFIG, SIM_PARAM
 
 #import matlab.engine
 #from sklearn.preprocessing import normalize
+
+def large_matrix_to_string(mat):
+    retStr = ""
+    for vec in mat:
+        retStr += str(vec) + "\n"    
+    return retStr
 
 class FEDXGBOOST_MSGID:
     SECURE_KERNEL = 200
@@ -26,8 +32,14 @@ class FEDXGBOOST_MSGID:
     OPTIMAL_SPLITTING_INFO = 203
 
 class FEDXGBOOST_PARAMETER:
-    nMaxSecureKernel = 50
-    nMaxResponse = 30
+    nMaxSecureKernel = 1000 #min(int(SIM_PARAM.N_SAMPLE * 0.11), 3000)
+    #nMaxResponse = 30
+    nMinSelectedResponse = nMaxSecureKernel
+    r = 0.03
+
+    def log():
+        logger.warning("FedXGBoostParam, r : %f", FEDXGBOOST_PARAMETER.r)
+
 
 def secure_response(privateX, U):
     return secure_response_fast(privateX, U)
@@ -38,17 +50,20 @@ def plain_response(privateX, U):
 
 
 def secure_response_plain(privateX, U):
-    r = np.random.randint(U.shape[1])
+    #r = np.random.randint(U.shape[1])
+    #r = min(FEDXGBOOST_PARAMETER.nMinSelectedResponse, U.shape[1])
+    r = U.shape[1]
     Z = U[:, np.random.randint(U.shape[1], size=r)]
     W = np.identity(privateX.shape[0]) - np.matmul(Z, Z.T)
     ret = np.matmul(W,privateX)
     return ret
     
 def secure_response_fast(privateX, U):
-    r = np.random.randint(U.shape[1])
+    #r = min(FEDXGBOOST_PARAMETER.nMinSelectedResponse, U.shape[1])
+    r = U.shape[1]
     Z = U[:, np.random.randint(U.shape[1], size=r)]
-    N = np.random.randint(10, size = (r,privateX.shape[1]))
-    #print(Z.shape, N.shape, privateX.shape, U.shape)
+    N = np.random.normal(loc= 1000, scale = U.shape[1]^2, size = (r,privateX.shape[1]))
+    print(Z.shape, N.shape, privateX.shape, U.shape)
     return privateX - np.matmul(Z,N)
 
 # def secure_response_lra_rn(privateX, U):
@@ -83,6 +98,9 @@ class FedXGBoostClassifier(FLXGBoostClassifierBase):
             tree = VerticalFedXGBoostTree(i)
             trees.append(tree)
         super().__init__(trees)
+
+        FEDXGBOOST_PARAMETER.log()
+
 
 
 class VerticalFedXGBoostTree(FLPlainXGBoostTree):
@@ -122,16 +140,18 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             # #print(Z)
 
             # Select set of coulmn vectors to generate the secure kernel.
-            Z = get_approx_nullspace(matGH.T, rRandomSelected = int(FEDXGBOOST_PARAMETER.nMaxSecureKernel * 2), nOut = FEDXGBOOST_PARAMETER.nMaxSecureKernel)
+            U = get_approx_nullspace(matGH.T, ratio = FEDXGBOOST_PARAMETER.r)
 
-            logger.debug("Performed QR decomposition of [G, H])")
+            # Log the nullspace to evaluate the privacy concern
             logger.debug("GradHess matrix: %s", str(matGH.T))
-            logger.debug("Nullspace matrix: %s", str(Z))
+            logger.debug("Transpose of the Generated Nullspace vectors:")
+            logger.debug("\n%s", large_matrix_to_string(matGH.T))
+
             nTx = 0
             for partners in range(2, nprocs):   
                 # Send the Secure kernel to the PP
-                self.commLogger.log_nTx(Z.size * Z.itemsize, partners, self.treeID)
-                status = comm.send(Z, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
+                self.commLogger.log_nTx(U.size * U.itemsize, partners, self.treeID)
+                status = comm.send(U, dest = partners, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
                 #logger.warning("Sent the splitting matrix to the active party")         
 
             for i in range(2, nprocs):
@@ -143,8 +163,12 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
 
                 # Collect all private splitting info from the partners to find the optimal splitting candidates
                 # Find the optimal splitting score iff the splitting matrix is provided
-                rxSR = rxSR.T
                 if rxSR.size:
+                    # Log the SecureResponse rxSR to analyze the privacy level of the secure response
+                    logger.debug("Received Secure Response from PP (Transposed)")
+                    logger.debug("\n%s", large_matrix_to_string(rxSR))
+
+                    rxSR = rxSR.T
                     score, maxScore, bestSplitId = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
@@ -153,7 +177,9 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                         sInfo.selectedCandidate = bestSplitId
                         sInfo.isValid = True
                     
-       
+
+                    
+
             # Build Tree from the feature with the optimal index
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = FEDXGBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
@@ -164,7 +190,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             # Perform the secure Sharing of the splitting matrix
             privateSM = qDataBase.get_merged_splitting_matrix()
             logger.info("Merged splitting options from all features and obtain the private splitting matrix with shape of {}".format(str(privateSM.shape)))
-            logger.debug("Value of the private splitting matrix is \n{}".format(str(privateSM))) 
+            #logger.debug("Value of the private splitting matrix is \n{}".format(str(privateSM))) 
 
             # Receive the secured kernel
             secureKernel = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_KERNEL)
@@ -177,6 +203,10 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                 secureRep = secure_response(privateSM.T, secureKernel)
                 #print("Secure Response Time", time.time() - compute_time)        
                 logger.info("Sent the secure response to the active party")
+
+                logger.debug("The private SM (transposed)")
+                logger.debug("\n%s", large_matrix_to_string(privateSM.T))
+
             else:
                 logger.info("No splitting option feasible. Sent empty splitting matrix the active party")
             status = comm.send(secureRep, dest=PARTY_ID.ACTIVE_PARTY, tag = FEDXGBOOST_MSGID.SECURE_RESPONSE)
