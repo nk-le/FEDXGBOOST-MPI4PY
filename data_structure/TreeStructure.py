@@ -80,7 +80,7 @@ class FLTreeNode(TreeNode):
         return score
 
     @staticmethod
-    def compute_leaf_param(gVec, hVec, lamb = XgboostLearningParam.LAMBDA):
+    def compute_leaf_param(gVec, hVec, lamb):
         gI = sum(gVec) 
         hI = sum(hVec)
         weight = -1.0 * gI / (hI + lamb)

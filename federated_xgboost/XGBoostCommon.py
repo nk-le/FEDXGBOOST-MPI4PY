@@ -12,14 +12,14 @@ class PARTY_ID:
 
 class XgboostLearningParam():
     #def __init__(self) -> None:
-    LOSS_FUNC = LogLoss()
-    LOSS_TERMINATE = 200
-    LAMBDA = 1
-    GAMMA = 0.2
-    N_TREES = 10
-    MAX_DEPTH = 10
+    LOSS_FUNC = None
+    LOSS_TERMINATE = None
+    LAMBDA = None
+    GAMMA = None
+    N_TREES = None
+    MAX_DEPTH = None
 
-def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):
+def compute_splitting_score(SM, GVec, HVec, lamb, gamma):
     G = sum(GVec)
     H = sum(HVec)
     GRVec = np.matmul(SM, GVec)

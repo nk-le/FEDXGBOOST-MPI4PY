@@ -250,6 +250,7 @@ def main():
 
     def pre_config():
         XgboostLearningParam.LOSS_FUNC = LogLoss()
+        XgboostLearningParam.LOSS_TERMINATE = 50
         XgboostLearningParam.GAMMA = CONFIG["gamma"]
         XgboostLearningParam.LAMBDA = CONFIG["lambda"]
         QuantileParam.epsilon = QuantileParam.epsilon

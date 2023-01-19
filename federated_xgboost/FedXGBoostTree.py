@@ -118,7 +118,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
             #startOptimalFinding = time.time()
             
             if privateSM.size: # check it own candidate
-                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
+                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
                 if(maxScore > 0):
                     sInfo.isValid = True
                     sInfo.bestSplitParty = PARTY_ID.ACTIVE_PARTY
@@ -169,7 +169,7 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
                     logger.debug("\n%s", large_matrix_to_string(rxSR))
 
                     rxSR = rxSR.T
-                    score, maxScore, bestSplitId = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec)
+                    score, maxScore, bestSplitId = compute_splitting_score(rxSR, qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore

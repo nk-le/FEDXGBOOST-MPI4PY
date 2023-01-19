@@ -14,7 +14,7 @@ CONFIG = {
   "model": modelArr[1],
   "dataset": dataset[1],
   "lambda": 1,
-  "gamma": 0.1,
+  "gamma": 15,
   "MAX_DEPTH": 8,
   "MAX_TREE": 15
 }

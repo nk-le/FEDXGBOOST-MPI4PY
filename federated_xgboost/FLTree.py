@@ -187,7 +187,9 @@ class FLPlainXGBoostTree():
         # Compute the gradients and hessians
         if rank == PARTY_ID.ACTIVE_PARTY: # Calculate gradients on the node who have labels.
             G = np.array(self.learningParam.LOSS_FUNC.gradient(y, yPred)).reshape(-1)
+            #G = G/ np.linalg.norm(G)
             H = np.array(self.learningParam.LOSS_FUNC.hess(y, yPred)).reshape(-1)
+            #H = H/ np.linalg.norm(G)
             logger.debug("Computed Gradients and Hessians ")
             logger.debug("G {}".format(' '.join(map(str, G))))
             logger.debug("H {}".format(' '.join(map(str, H))))
@@ -336,7 +338,7 @@ class FLPlainXGBoostTree():
                 self.fed_grow(rD, depth, NodeDirection = TreeNodeType.RIGHT, currentNode=currentNode.rightBranch)
             
             else:
-                weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec)
+                weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA)
                 currentNode.weight = weight
                 currentNode.score = score
                 currentNode.leftBranch = None
@@ -344,7 +346,7 @@ class FLPlainXGBoostTree():
 
                 logger.info("Reached max-depth or Gain is negative. Terminate the tree growing, generate the leaf with weight Leaf Weight: %f", currentNode.weight)
         else:
-            weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec)
+            weight, score = FLTreeNode.compute_leaf_param(qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA)
             currentNode.weight = weight
             currentNode.score = score
             currentNode.leftBranch = None
