@@ -67,9 +67,7 @@ class FLXGBoostClassifierBase():
         #y_pred = np.ones(np.shape(self.label)) * 0.5
         y_pred = np.ones(np.shape(self.label))
 
-        # Start federated boosting
-        tStartBoost = self.excTimeLogger.log_start_boosting()
-            
+        
         nprocs = comm.Get_size()
         if rank == PARTY_ID.ACTIVE_PARTY:
             newTreeGain = 0
@@ -77,6 +75,8 @@ class FLXGBoostClassifierBase():
             print("nTreeTotal", self.nTree,"Loss", abs(loss), "Tree Gain", newTreeGain)
             logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", -1, abs(loss), abs(newTreeGain))
 
+        # Start federated boosting
+        tStartBoost = self.excTimeLogger.log_start_boosting()
         for i in range(self.nTree): 
             tStartTree = TimeLogger.tic()    
             # Perform tree boosting
