@@ -1,0 +1,58 @@
+WARNING - [FedXGBoostTree.py:41 - log] FedXGBoostParam, r : 0.030000
+WARNING - [main.py:273 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'GiveMeCredits'}
+WARNING - [main.py:274 - main] XGBoostParameter, nTree: 8, maxDepth: 6, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:276 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:37 - log_distribution] DataDistribution, nTrain: 30000, zeroRate: 0.930533, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:53 - append_data] Appended data feature ['NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'] to database of party 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 0
+WARNING - [TreeRender.py:23 - display]                               _________1____     
+WARNING - [TreeRender.py:23 - display]                              /              \    
+WARNING - [TreeRender.py:23 - display]           ___________________2____      w = -0.00
+WARNING - [TreeRender.py:23 - display]          /                        \              
+WARNING - [TreeRender.py:23 - display]      ____2_________           w = -0.00          
+WARNING - [TreeRender.py:23 - display]     /              \                             
+WARNING - [TreeRender.py:23 - display] w = -0.00      ____2____                         
+WARNING - [TreeRender.py:23 - display]               /         \                        
+WARNING - [TreeRender.py:23 - display]           w = -0.00 w = -0.00                    
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 0,  dt: 15.792583947000821
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 0,  dt: 0.8416080980023253
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 1
+WARNING - [TreeRender.py:23 - display]                                                                                 _______________________________________________________________________________1_____________________________________________________________________                                        
+WARNING - [TreeRender.py:23 - display]                                                                                /                                                                                                                                                     \                                       
+WARNING - [TreeRender.py:23 - display]                                         _______________________________________2_______________________________________                                                                       _______________________________________1_________                              
+WARNING - [TreeRender.py:23 - display]                                        /                                                                               \                                                                     /                                                 \                             
+WARNING - [TreeRender.py:23 - display]                     ___________________2___________________                                         ___________________2___________________                                         _________1___________________                          ____2_________                    
+WARNING - [TreeRender.py:23 - display]                    /                                       \                                       /                                       \                                       /                             \                        /              \                   
+WARNING - [TreeRender.py:23 - display]           _________2_________                     _________2_________                     _________2_________                     _________1_________                     _________2____                _________2_________           w = -0.00      ____2_________          
+WARNING - [TreeRender.py:23 - display]          /                   \                   /                   \                   /                   \                   /                   \                   /              \              /                   \                        /              \         
+WARNING - [TreeRender.py:23 - display]      ____2____           ____2____           ____1____           ____1____           ____2____           ____1____           ____1____           ____2____           ____2____      w = -0.00      ____2____           ____2____                w = -0.00      ____1____     
+WARNING - [TreeRender.py:23 - display]     /         \         /         \         /         \         /         \         /         \         /         \         /         \         /         \         /         \                   /         \         /         \                             /         \    
+WARNING - [TreeRender.py:23 - display] w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00           w = -0.00 w = -0.00 w = -0.00 w = -0.00                     w = -0.00 w = -0.00
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 1,  dt: 28.810630109001067
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 1,  dt: 2.4986856520008587
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 2
+WARNING - [TreeRender.py:23 - display]                                                                                 _______________________________________________________________________________1_________________________________________________                                        
+WARNING - [TreeRender.py:23 - display]                                                                                /                                                                                                                                 \                                       
+WARNING - [TreeRender.py:23 - display]                                         _______________________________________2_______________________________________                                                   _______________________________________1___________________                    
+WARNING - [TreeRender.py:23 - display]                                        /                                                                               \                                                 /                                                           \                   
+WARNING - [TreeRender.py:23 - display]                     ___________________2___________________                                         ___________________1___________________                          ____2___________________                               _________2_________          
+WARNING - [TreeRender.py:23 - display]                    /                                       \                                       /                                       \                        /                        \                             /                   \         
+WARNING - [TreeRender.py:23 - display]           _________1_________                     _________2_________                     _________2_________                     _________2_________           w = -0.00           _________2_________                ____1____           ____2____     
+WARNING - [TreeRender.py:23 - display]          /                   \                   /                   \                   /                   \                   /                   \                             /                   \              /         \         /         \    
+WARNING - [TreeRender.py:23 - display]      ____2____           ____2____           ____2____           ____2____           ____2____           ____2____           ____1____           ____1____                     ____2____           ____2____      w = -0.00 w = -0.00 w = -0.00 w = -0.00
+WARNING - [TreeRender.py:23 - display]     /         \         /         \         /         \         /         \         /         \         /         \         /         \         /         \                   /         \         /         \                                            
+WARNING - [TreeRender.py:23 - display] w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00 w = -0.00           w = -0.00 w = -0.00 w = -0.00 w = -0.00                                        
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 2,  dt: 29.18150361500011
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 2,  dt: 2.467122225996718
+WARNING - [FLTree.py:120 - boost] Received the abort boosting flag from AP
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:379 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...

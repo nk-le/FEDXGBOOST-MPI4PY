@@ -1,0 +1,23 @@
+WARNING - [main.py:277 - main] TestInfo, {'model': 'PlainXGBoost', 'dataset': 'Iris'}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 3, maxDepth: 5, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.200000
+WARNING - [main.py:27 - log_distribution] DataDistribution, nTrain: 80, ratioTrain: 1.000000, nTest: 20, ratioTest: 1.000000
+WARNING - [FLTree.py:51 - append_data] Appended data feature ['pedal width'] to database of party 4
+WARNING - [TreeRender.py:21 - display] Structure of tree 0
+WARNING - [TreeRender.py:23 - display]                    _________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]__________________                  
+WARNING - [TreeRender.py:23 - display]                   /                                                                                 \                 
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-0.] S: [-0.]]                                              FID: 2: [N = 40: W = [-0.] S: [-0.]]
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [TreeRender.py:21 - display] Structure of tree 1
+WARNING - [TreeRender.py:23 - display]                    _________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]__________________                  
+WARNING - [TreeRender.py:23 - display]                   /                                                                                 \                 
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-0.] S: [-0.]]                                              FID: 2: [N = 40: W = [-0.] S: [-0.]]
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [TreeRender.py:21 - display] Structure of tree 2
+WARNING - [TreeRender.py:23 - display]                    _________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]__________________                  
+WARNING - [TreeRender.py:23 - display]                   /                                                                                 \                 
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-0.] S: [-0.]]                                              FID: 2: [N = 40: W = [-0.] S: [-0.]]
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:343 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...

@@ -1,0 +1,28 @@
+WARNING - [main.py:277 - main] TestInfo, {'model': 'PlainXGBoost', 'dataset': 'Iris'}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 3, maxDepth: 5, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.200000
+WARNING - [main.py:27 - log_distribution] DataDistribution, nTrain: 80, ratioTrain: 1.000000, nTest: 20, ratioTest: 1.000000
+WARNING - [FLTree.py:51 - append_data] Appended data feature ['sepal length'] to database of party 1
+WARNING - [TreeRender.py:21 - display] Structure of tree 0
+WARNING - [TreeRender.py:23 - display]                            __________________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]__________________________                          
+WARNING - [TreeRender.py:23 - display]                           /                                                                                                  \                         
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-1.81818182] S: [-18.18181818]]                                              FID: 2: [N = 40: W = [1.81818182] S: [-18.18181818]]
+WARNING - [FLTree.py:175 - fit_fed] Boosting, TreeID 0, Loss: 55.451774, Gain: 35.363636
+WARNING - [FLTree.py:101 - evaluate] Metrics, treeID: 0, acc: 1.000000, auc: 1.000000
+WARNING - [TreeRender.py:21 - display] Structure of tree 1
+WARNING - [TreeRender.py:23 - display]                            _________________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]_________________________                          
+WARNING - [TreeRender.py:23 - display]                           /                                                                                                \                         
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-0.96212684] S: [-2.68726229]]                                              FID: 2: [N = 40: W = [0.96212684] S: [-2.68726229]]
+WARNING - [FLTree.py:175 - fit_fed] Boosting, TreeID 1, Loss: 12.033483, Gain: 4.374525
+WARNING - [FLTree.py:101 - evaluate] Metrics, treeID: 1, acc: 1.000000, auc: 1.000000
+WARNING - [TreeRender.py:21 - display] Structure of tree 2
+WARNING - [TreeRender.py:23 - display]                            _________________________FID: 0: [P: 2, N = 80, F: Unknown, s: Unknown]_________________________                          
+WARNING - [TreeRender.py:23 - display]                           /                                                                                                \                         
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 40: W = [-0.73008563] S: [-0.85270469]]                                              FID: 2: [N = 40: W = [0.73008563] S: [-0.85270469]]
+WARNING - [FLTree.py:175 - fit_fed] Boosting, TreeID 2, Loss: 4.813772, Gain: 0.705409
+WARNING - [FLTree.py:101 - evaluate] Metrics, treeID: 2, acc: 1.000000, auc: 1.000000
+WARNING - [FLTree.py:101 - evaluate] Metrics, treeID: FINAL, acc: 1.000000, auc: 1.000000
+WARNING - [PerformanceLogger.py:56 - log] ExecutionTime, dtBoost: 0.0, nTree = 3, dtTree: [0.010291490999861708, 0.011107802999958949, 0.010145101999569306], dtPred: [0.004755538000154047, 0.0038993459997982427, 0.003619419000187918]
+WARNING - [PerformanceLogger.py:22 - log] Communication, nRx: [[], [], [10240, 640, 2560], [3840, 1920, 1600], [5120, 320, 960]], nTx: [[], [], [], [], []]
+WARNING - [PerformanceLogger.py:22 - log] Communication, nRx: [[], [], [10240, 640, 2560], [3840, 1920, 1600], [5120, 320, 960]], nTx: [[], [], [], [], []]
+WARNING - [PerformanceLogger.py:22 - log] Communication, nRx: [[], [], [10240, 640, 2560], [3840, 1920, 1600], [5120, 320, 960]], nTx: [[], [], [], [], []]

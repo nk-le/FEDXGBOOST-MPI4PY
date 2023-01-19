@@ -1,0 +1,39 @@
+WARNING - [main.py:240 - main] TestInfo, {'model': 'SecureBoost', 'dataset': 'GiveMeCredits'}
+WARNING - [main.py:241 - main] XGBoostParameter, nTree: 6, maxDepth: 3, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:243 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:37 - log_distribution] DataDistribution, nTrain: 1000, zeroRate: 0.931000, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:51 - append_data] Appended data feature ['NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'] to database of party 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 0
+WARNING - [TreeRender.py:23 - display]                    __________________FID: 0: [P: 2, N = 1000, F: NumberOfOpenCreditLinesAndLoans, S: 0.1379]__________________                   
+WARNING - [TreeRender.py:23 - display]                   /                                                                                                           \                  
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 538: W = [-0.] S: [-0.]]                                                                       FID: 2: [N = 462: W = [-0.] S: [-0.]]
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 0,  dt: 39.05818726199868
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 0,  dt: 0.02605582999967737
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 1
+WARNING - [TreeRender.py:23 - display]                    __________________FID: 0: [P: 1, N = 1000, F: Unknown, s: Unknown]__________________                   
+WARNING - [TreeRender.py:23 - display]                   /                                                                                    \                  
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 517: W = [-0.] S: [-0.]]                                                FID: 2: [N = 483: W = [-0.] S: [-0.]]
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 1,  dt: 39.3150746930005
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 1,  dt: 0.004048781000165036
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 2
+WARNING - [TreeRender.py:23 - display]                    __________________FID: 0: [P: 1, N = 1000, F: Unknown, s: Unknown]____________________________________________________________                                                             
+WARNING - [TreeRender.py:23 - display]                   /                                                                                                                              \                                                            
+WARNING - [TreeRender.py:23 - display] FID: 1: [N = 517: W = [-0.] S: [-0.]]                                                                   __________________FID: 2: [P: 1, N = 483, F: Unknown, s: Unknown]__________________                   
+WARNING - [TreeRender.py:23 - display]                                                                                                        /                                                                                   \                  
+WARNING - [TreeRender.py:23 - display]                                                                                      FID: 3: [N = 238: W = [-0.] S: [-0.]]                                               FID: 4: [N = 245: W = [-0.] S: [-0.]]
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 2,  dt: 47.79860789899976
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 2,  dt: 0.005211938001593808
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 3
+WARNING - [TreeRender.py:23 - display] FID: 0: [N = 1000: W = [-0.] S: [-0.]]
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 3,  dt: 19.151331648998166
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 3,  dt: 0.0013273600015963893
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [FLTree.py:357 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...

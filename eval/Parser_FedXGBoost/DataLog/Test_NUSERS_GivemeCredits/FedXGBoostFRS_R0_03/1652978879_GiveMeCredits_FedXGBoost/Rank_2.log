@@ -1,0 +1,16 @@
+WARNING - [FedXGBoostTree.py:41 - log] FedXGBoostParam, r : 0.030000
+WARNING - [main.py:273 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'GiveMeCredits'}
+WARNING - [main.py:274 - main] XGBoostParameter, nTree: 1, maxDepth: 3, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:276 - main] QuantileParameter, eps: 0.010000, thres: 0.300000
+WARNING - [main.py:37 - log_distribution] DataDistribution, nTrain: 10000, zeroRate: 0.930600, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:51 - append_data] Appended data feature ['NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'] to database of party 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 0
+WARNING - [TreeRender.py:23 - display]                                                                          _______________________________________________________________________FID: 0: [P: 1, N = 10000, F: Unknown, s: Unknown]___________________                   
+WARNING - [TreeRender.py:23 - display]                                                                         /                                                                                                                                           \                  
+WARNING - [TreeRender.py:23 - display]                     __________________FID: 1: [P: 2, N = 5941, F: NumberRealEstateLoansOrLines, S: 0.0000]___________________                                                                    FID: 4: [N = 4059: W = [-0.] S: [-0.]]
+WARNING - [TreeRender.py:23 - display]                    /                                                                                                         \                                                                                                         
+WARNING - [TreeRender.py:23 - display] FID: 2: [N = 2268: W = [-0.] S: [-0.]]                                                                    FID: 3: [N = 3673: W = [-0.] S: [-0.]]                                                                                       
+WARNING - [PerformanceLogger.py:43 - log_dt_fit] FitTime, TreeID: 0,  dt: 4.480481890001101
+WARNING - [FLTree.py:360 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...
+WARNING - [PerformanceLogger.py:48 - log_dt_pred] PredTime, TreeID: 0,  dt: 0.2177676699939184
+WARNING - [FLTree.py:360 - fed_predict] Received the inital inference request from the active party. Start performing federated inferring ...

@@ -1,0 +1,37 @@
+WARNING - [main.py:240 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'Adult'}
+WARNING - [main.py:241 - main] XGBoostParameter, nTree: 6, maxDepth: 3, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:243 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:37 - log_distribution] DataDistribution, nTrain: 9999, zeroRate: 0.759176, nTest: 22562, ratioTest: 0.759197, nFeature: 108
+WARNING - [FLTree.py:51 - append_data] Appended data feature ['Rank_1_Feature_0', 'Rank_1_Feature_1'] to database of party 1
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 2399760, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 719928, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 1304160, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 347776, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 688800, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 229600, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 615360, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 184608, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 1095600, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 365200, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 737520, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 172088, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 358080, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 119360, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 0
+WARNING - [TreeRender.py:23 - display]                                                                                       ____________________________________________________________________________________FID: 0: [P: 2, N = 9999, F: Unknown, s: Unknown]________________________________________________________________________________                                                                             
+WARNING - [TreeRender.py:23 - display]                                                                                      /                                                                                                                                                                                                                    \                                                                            
+WARNING - [TreeRender.py:23 - display]                              ____________________________FID: 1: [P: 1, N = 5434, F: Rank_1_Feature_0, S: 0.3556]____________________________                                                                                                          ___________________________FID: 4: [P: 2, N = 4565, F: Unknown, s: Unknown]__________________________                           
+WARNING - [TreeRender.py:23 - display]                             /                                                                                                                \                                                                                                        /                                                                                                     \                          
+WARNING - [TreeRender.py:23 - display] FID: 2: [N = 2870: W = [-2.56633495] S: [-2224.31728075]]                                                        FID: 3: [N = 2564: W = [-2.14561637] S: [-1389.27128448]]                                                FID: 5: [N = 3073: W = [-1.24704012] S: [-562.30131783]]                                                FID: 6: [N = 1492: W = [0.3250352] S: [-18.57424676]]
+WARNING - [FLTree.py:183 - fit_fed] Boosting, TreeID: 0, Loss: 8535.795765, Gain: 4192.464130
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 0,  dt: 5.526317829000618
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 0,  dt: 0.4225912879992393
+WARNING - [FLTree.py:102 - evaluate] Metrics, TreeID: 0, acc: 0.818582, auc: 0.827426
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 2399760, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 719928, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 781920, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 208512, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 535440, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 178480, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 246480, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 90376, Partner: 2

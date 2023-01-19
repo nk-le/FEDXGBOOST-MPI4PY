@@ -1,0 +1,3 @@
+WARNING - [main.py:240 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'GiveMeCredits'}
+WARNING - [main.py:241 - main] XGBoostParameter, nTree: 6, maxDepth: 3, lambda: 1.000000, gamma: 0.500000
+WARNING - [main.py:243 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
