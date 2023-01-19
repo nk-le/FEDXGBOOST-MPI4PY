@@ -7,17 +7,20 @@ import os
 import random
 #import matlab.engine
 
-
 modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost", "FedXGBoost-Nys"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 
 CONFIG = {
   "model": modelArr[1],
   "dataset": dataset[1],
+  "lambda": 1,
+  "gamma": 0.1,
+  "MAX_DEPTH": 8,
+  "MAX_TREE": 15
 }
 
 class SIM_PARAM:
-  N_SAMPLE = int(5e4)
+  N_SAMPLE = int(8e4)
   N_FEATURE = int(10)
 
 """
@@ -39,7 +42,8 @@ day = date.today().strftime("%b-%d-%Y")
 
 curTime = round(time.time())
 
-logName = 'Log/{}/{}/{}_{}_{}/Rank_{}.log'.format(TEST_CASE, str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
+logName = 'Log/{}/{}/{}_{}_{}_{}_{}/Rank_{}.log'.format(TEST_CASE, str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(CONFIG["lambda"]), str(CONFIG["gamma"]), str(rank))
+#logName = 'Log/{}/{}/{}_{}_{}/Rank_{}.log'.format(TEST_CASE, str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
 os.makedirs(os.path.dirname(logName), exist_ok=True)
 
 file_handler = logging.FileHandler(logName, mode='w')

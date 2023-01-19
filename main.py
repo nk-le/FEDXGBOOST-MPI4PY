@@ -15,15 +15,7 @@ from data_preprocessing import *
 from federated_xgboost.XGBoostCommon import XgboostLearningParam, PARTY_ID 
 
 
-def pre_config():
-    XgboostLearningParam.LOSS_FUNC = LogLoss()
-    XgboostLearningParam.GAMMA = 0.5
-    XgboostLearningParam.LAMBDA = 1
-    QuantileParam.epsilon = QuantileParam.epsilon
-    QuantileParam.thres_balance = 0.3
 
-    XgboostLearningParam.N_TREES = 8    
-    XgboostLearningParam.MAX_DEPTH = 6
 
 
 def log_distribution(X_train, y_train, y_test):
@@ -255,6 +247,17 @@ from config import CONFIG, dataset
 
 
 def main():
+
+    def pre_config():
+        XgboostLearningParam.LOSS_FUNC = LogLoss()
+        XgboostLearningParam.GAMMA = CONFIG["gamma"]
+        XgboostLearningParam.LAMBDA = CONFIG["lambda"]
+        QuantileParam.epsilon = QuantileParam.epsilon
+        QuantileParam.thres_balance = 0.3
+
+        XgboostLearningParam.N_TREES = CONFIG["MAX_TREE"]
+        XgboostLearningParam.MAX_DEPTH = CONFIG["MAX_DEPTH"]
+
     try:
         pre_config()
 

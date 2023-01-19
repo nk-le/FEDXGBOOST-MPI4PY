@@ -1,5 +1,4 @@
 __pycache__
-*.log
-*/*.log
+Log/
 *.code-workspace
 venv/

@@ -246,6 +246,7 @@ class FLPlainXGBoostTree():
                                 
             # Build Tree from the feature with the optimal index
             # Build Tree from the feature with the optimal index
+            sInfo.log()
             for partners in range(2, nprocs):
                 data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
 
@@ -262,6 +263,7 @@ class FLPlainXGBoostTree():
 
             # Receive the optimal splitting information
             sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)            
+            sInfo.log()
             logger.info("Received the Splitting Info from the active party")   
 
 
@@ -270,6 +272,7 @@ class FLPlainXGBoostTree():
             # If the selected party is me  
 
         if (sInfo.isValid):
+            #print(rank, sInfo.get_str_split_info())
             sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         
         return sInfo

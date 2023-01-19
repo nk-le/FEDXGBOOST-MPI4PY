@@ -15,9 +15,9 @@ class XgboostLearningParam():
     LOSS_FUNC = LogLoss()
     LOSS_TERMINATE = 200
     LAMBDA = 1
-    GAMMA = 0.5
+    GAMMA = 0.2
     N_TREES = 10
-    MAX_DEPTH = 5
+    MAX_DEPTH = 10
 
 def compute_splitting_score(SM, GVec, HVec, lamb = XgboostLearningParam.LAMBDA, gamma = XgboostLearningParam.GAMMA):
     G = sum(GVec)

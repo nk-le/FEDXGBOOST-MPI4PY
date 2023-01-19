@@ -217,7 +217,8 @@ class VerticalFedXGBoostTree(FLPlainXGBoostTree):
         
             
         # Post processing, final announcement (optimal splitting vector)
-        sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
+        if (sInfo.isValid):
+            sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         
         return sInfo
 
