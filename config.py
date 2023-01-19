@@ -13,7 +13,7 @@ dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
   "model": modelArr[0],
-  "dataset": dataset[1],
+  "dataset": dataset[0],
 }
 
 np.random.seed(10)

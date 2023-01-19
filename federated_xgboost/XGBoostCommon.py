@@ -14,7 +14,7 @@ class XgboostLearningParam():
     #def __init__(self) -> None:
     LOSS_FUNC = LogLoss()
     LAMBDA = 1
-    GAMMA = 0.5
+    GAMMA = 100
     N_TREES = 10
     MAX_DEPTH = 5
 

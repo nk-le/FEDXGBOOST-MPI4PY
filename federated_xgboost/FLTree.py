@@ -23,6 +23,8 @@ class MSG_ID:
     OPTIMAL_SPLITTING_SELECTION = 94
     INIT_INFERENCE_SIG = 89
     ABORT_INFERENCE_SIG = 90
+    ABORT_BOOSTING_SIG = 88
+    
 
 class FLXGBoostClassifierBase():
     def __init__(self, treeSet):
@@ -67,6 +69,27 @@ class FLXGBoostClassifierBase():
 
         # Start federated boosting
         tStartBoost = self.excTimeLogger.log_start_boosting()
+        
+        
+        # abortSig = comm.irecv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.ABORT_INFERENCE_SIG)            
+        #     isAbort, mes = abortSig.test()
+        #     # Synchronous modes as performing the federated inference
+        #     while(not isAbort):
+        #         self.classify_fed(database)        
+        #         isAbort, mes = abortSig.test()
+
+        # for partners in range(2, nprocs):
+        #     data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
+        
+        # nprocs = comm.Get_size()
+        #     # Collect all private splitting info from the partners to find the optimal splitting candidates
+        #     for i in range(2, nprocs):
+        #         # Receive the Secure Response from the PP
+        #         stat = MPI.Status()
+        #         rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = MSG_ID.RAW_SPLITTING_MATRIX, status = stat)
+        #         logger.info("Received the secure response from the passive party")       
+
+
         for i in range(self.nTree): 
             tStartTree = TimeLogger.tic()    
             # Perform tree boosting
@@ -81,9 +104,19 @@ class FLXGBoostClassifierBase():
 
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
+                
+                # aggresgate the prediction to compute the loss
                 y_pred += update_pred
-
                 self.evaluate(y_pred, y, i)
+                
+                # Evaluation
+                newTreeGain = abs(self.trees[i].root.compute_score())
+                loss = self.trees[i].learningParam.LOSS_FUNC.diff(y, y_pred)
+                print("Loss", abs(loss), "Tree Gain", newTreeGain)
+                logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", self.trees[i].treeID, abs(loss), abs(newTreeGain))
+                
+                #loss = self.trees[i].learningParam.LOSS_FUNC.diff(y, y_pred)
+                #print("External Loss: ", abs(loss))
 
         self.excTimeLogger.log_end_boosting(tStartBoost)
 
@@ -97,6 +130,8 @@ class FLXGBoostClassifierBase():
         acc = np.sum(result == 0) / y_pred.shape[0]
         auc = metrics.roc_auc_score(y, y_pred_true)
         logger.warning("Metrics, TreeID: %s, acc: %f, auc: %f", str(treeid), acc, auc)
+        
+
         return acc, auc
 
     def predict(self, X, fName = None):
@@ -167,13 +202,6 @@ class FLPlainXGBoostTree():
             b = FLVisNode(self.root)
             b.display(self.treeID)
 
-            # Evaluation
-            if(rank == 1):
-                newTreeGain = abs(self.root.compute_score())
-                loss = self.learningParam.LOSS_FUNC.diff(y, yPred)
-                print("Loss", abs(loss), "Tree Gain", newTreeGain)
-                logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", self.treeID, abs(loss), abs(newTreeGain))
-    
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
         # Each party studies their own user's distribution and prepare the splitting matrix
         privateSM = qDataBase.get_merged_splitting_matrix()
