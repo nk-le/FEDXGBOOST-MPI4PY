@@ -1,0 +1,21 @@
+WARNING - [main.py:277 - main] TestInfo, {'model': 'PlainXGBoost', 'dataset': 'GiveMeCredits', 'lambda': 1, 'gamma': 1, 'MAX_DEPTH': 8, 'MAX_TREE': 15}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 15, maxDepth: 8, lambda: 1.000000, gamma: 1.000000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:29 - log_distribution] DataDistribution, nTrain: 80000, zeroRate: 0.930525, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:53 - append_data] Appended data feature ['RevolvingUtilizationOfUnsecuredLines', 'age'] to database of party 1
+WARNING - [FLTree.py:76 - boost] Boosting, TreeID: -1, Loss: 99502.935002, Gain: 0.000000
+ERROR - [main.py:299 - main] Exception occurred
+Traceback (most recent call last):
+  File "main.py", line 286, in main
+    y_pred, y_test, model = test_give_me_credits(model)
+  File "main.py", line 153, in test_give_me_credits
+    model.boost()
+  File "/home/khanhln/Desktop/Python_Workspace/FedXGBoost-MPI4PY/federated_xgboost/FLTree.py", line 84, in boost
+    self.trees[i].fit_fed(y, y_pred, dataFit)
+  File "/home/khanhln/Desktop/Python_Workspace/FedXGBoost-MPI4PY/federated_xgboost/FLTree.py", line 208, in fit_fed
+    self.fed_grow(qDataBase, depth = 1, NodeDirection = TreeNodeType.ROOT, currentNode = rootNode)
+  File "/home/khanhln/Desktop/Python_Workspace/FedXGBoost-MPI4PY/federated_xgboost/FLTree.py", line 318, in fed_grow
+    sInfo = self.fed_optimal_split_finding(qDataBase)
+  File "/home/khanhln/Desktop/Python_Workspace/FedXGBoost-MPI4PY/federated_xgboost/FLTree.py", line 223, in fed_optimal_split_finding
+    score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
+TypeError: compute_splitting_score() missing 2 required positional arguments: 'lamb' and 'gamma'

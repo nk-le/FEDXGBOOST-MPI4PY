@@ -1,0 +1,5 @@
+WARNING - [main.py:277 - main] TestInfo, {'model': 'PlainXGBoost', 'dataset': 'GiveMeCredits', 'lambda': 1, 'gamma': 1, 'MAX_DEPTH': 8, 'MAX_TREE': 15}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 15, maxDepth: 8, lambda: 1.000000, gamma: 1.000000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:29 - log_distribution] DataDistribution, nTrain: 80000, zeroRate: 0.930525, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:53 - append_data] Appended data feature ['NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'] to database of party 2

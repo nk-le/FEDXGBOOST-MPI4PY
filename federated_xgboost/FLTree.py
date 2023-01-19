@@ -220,7 +220,7 @@ class FLPlainXGBoostTree():
         # Start finding the optimal candidate federatedly
         if rank == PARTY_ID.ACTIVE_PARTY:
             if privateSM.size: # check it own candidate
-                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
+                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
                 if(maxScore > 0):
                     sInfo.isValid = True
                     sInfo.bestSplitParty = PARTY_ID.ACTIVE_PARTY
@@ -238,7 +238,7 @@ class FLPlainXGBoostTree():
 
                 # Find the optimal splitting score iff the splitting matrix is provided
                 if rxSM.size:
-                    score, maxScore, bestSplitId = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec)
+                    score, maxScore, bestSplitId = compute_splitting_score(rxSM, qDataBase.gradVec, qDataBase.hessVec, XgboostLearningParam.LAMBDA, XgboostLearningParam.GAMMA)
                     # Select the optimal over all partner parties
                     if (maxScore > sInfo.bestSplitScore):
                         sInfo.bestSplitScore = maxScore
