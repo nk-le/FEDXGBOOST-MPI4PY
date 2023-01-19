@@ -29,123 +29,68 @@ class SECUREBOOST_MSGID:
 class SecureBoostClassifier(FLXGBoostClassifierBase):
     def __init__(self, nTree = 3):
         trees = []
-        for _ in range(nTree):
-            tree = PseudoVerticalSecureBoostTree()
+        for i in range(nTree):
+            tree = VerticalSecureBoostTree(i)
             trees.append(tree)
         super().__init__(trees)
         
+
+class PseudoSecureBoostClassifier(FLXGBoostClassifierBase):
+    def __init__(self, nTree = 3):
+        trees = []
+        for i in range(nTree):
+            tree = PseudoVerticalSecureBoostTree(i)
+            trees.append(tree)
+        super().__init__(trees)
+        
+
+
 
 class PseudoVerticalSecureBoostTree(FLPlainXGBoostTree):
     """
     The Federated Learning XGBoost Tree applying homomorphic encryption
     """
-    def __init__(self, param: XgboostLearningParam = XgboostLearningParam()):
-        super().__init__(param)
+    def __init__(self, id, param: XgboostLearningParam = XgboostLearningParam()):
+        super().__init__(id, param)
 
         self.HEHandler = Pyfhel()  
-        self.HEHandler.contextGen(p=65537, m=2048, base=3, flagBatching=True)   # Generating context. 
+        self.HEHandler.contextGen(p=65537, m=1024, base=3, flagBatching=True)   # Generating context. 
         self.HEHandler.keyGen()
+
+        self.pubkey, self.privkey = paillier.generate_paillier_keypair(n_length=2048)
 
     # Child class declares the privacy optimal split finding
     def fed_optimal_split_finding(self, qDataBase: QuantiledDataBase):
-        # Start finding the optimal candidate federatedly
-        nprocs = comm.Get_size()
-        # Each party studies their own user's distribution and prepare the splitting matrix
-        privateSM = qDataBase.get_merged_splitting_matrix()
-        sInfo = SplittingInfo()
-            
-        if rank == PARTY_ID.ACTIVE_PARTY:
-            if privateSM.size: # check it own candidate
-                score, maxScore, bestSplitId = compute_splitting_score(privateSM, qDataBase.gradVec, qDataBase.hessVec)
-                if(maxScore > 0):
-                    sInfo.isValid = True
-                    sInfo.bestSplitParty = PARTY_ID.ACTIVE_PARTY
-                    sInfo.selectedCandidate = bestSplitId
-                    sInfo.bestSplitScore = maxScore
-
-            # Encrypt the gradient and the hessians - This task is also time expensive
-            encGArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
-            encHArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
-            for i in range((qDataBase.nUsers)):
-                encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
-                encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
-            
-
-            logger.info("Encrypted the private gradients [G, H])")
-            logger.debug("Encrypted Gradient: %s", str(encGArr.T))
-            logger.debug("Encrypted Hessians: %s", str(encHArr.T))
-            G = sum(qDataBase.gradVec)
-            H = sum(qDataBase.hessVec)
-
-            # Send to the passive parties
-            nTx = 0
-            # Calculate the total amount of the transmitted bytes
-            nTx = 2 * qDataBase.nUsers * len(encGArr[i].to_bytes())
-            
-            for i in range(2, nprocs):
-                # Pseudo Send to the passive parties
-                self.commLogger.log_nTx(nTx, i, self.treeID)
-
-                stat = MPI.Status()
-                rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = SECUREBOOST_MSGID.RAW_SPLITTING_MATRIX, status = stat)
-                logger.info("Received the secure response from the passive party")            
-                if rxSM.size:
-                    scoreList = []
-                    nCandidates = rxSM.shape[0]
-                    aggGL = np.empty(nCandidates,dtype=PyCtxt)
-                    aggHL = np.empty(nCandidates,dtype=PyCtxt)
-                    
-                    for sc in range(nCandidates):
-                        aggGL[sc] = encGArr[0] - encGArr[0] #PyCtxt()
-                        aggHL[sc] = encHArr[0] - encHArr[0] #PyCtxt()
-                        # Aggregate all encrypted data. This is supposed to be performed by the passive parties, but mpi4py does not allow sending too many bytes
-                        for userIndex in range(qDataBase.nUsers):
-                            if(rxSM[sc, userIndex] == 0.0):
-                                aggGL[sc] += encGArr[userIndex]
-                                aggHL[sc] += encHArr[userIndex]
-                        GL = self.HEHandler.decryptFrac(aggGL[sc])
-                        HL = self.HEHandler.decryptFrac(aggHL[sc])
-                        GR = G - GL
-                        HR = H - HL
-                        L = get_splitting_score(G,H,GL,GR,HL,HR)
-                        logger.info("Received the encrypted aggregated data from the passive party")
-                        scoreList.append(L)
-                    dt = (time.time() - startHEAggre)
-
-                    bestSplitId = np.argmax(scoreList)
-                    maxScore = scoreList[bestSplitId]
-
-                    # Select the optimal over all partner parties
-                    if (maxScore > sInfo.bestSplitScore):
-                        sInfo.bestSplitScore = maxScore
-                        sInfo.bestSplitParty = stat.Get_source()
-                        sInfo.selectedCandidate = bestSplitId
-                        sInfo.isValid = True
-
-            # Build Tree from the feature with the optimal index
-            for partners in range(2, nprocs):
-                data = comm.send(sInfo, dest = partners, tag = SECUREBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)
-
-        elif (rank != 0):           
-            # Perform the secure Sharing of the splitting matrix
-            # qDataBase.printInfo()
-            
-            logger.info("Merged splitting options from all features and obtain the private splitting matrix with shape of {}".format(str(privateSM.shape)))
-            logger.debug("Value of the private splitting matrix is \n{}".format(str(privateSM))) 
-
-            # Send the splitting matrix to the active party
-            txSM = comm.send(privateSM, dest = PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.RAW_SPLITTING_MATRIX)
-            logger.info("Sent the splitting matrix to the active party")         
-
-            # Receive the optimal splitting information
-            sInfo = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = SECUREBOOST_MSGID.OPTIMAL_SPLITTING_SELECTION)            
-            logger.info("Received the Splitting Info from the active party")   
-
-        if (sInfo.isValid):
-            sInfo = self.fed_finalize_optimal_finding(sInfo, qDataBase, privateSM)
         
+        sInfo = super().fed_optimal_split_finding(qDataBase)
+
+        """
+        Pseudo encrypt to compute the total amount of the transmitted bytes
+        """
+        if rank == PARTY_ID.ACTIVE_PARTY:
+            # Encrypt the gradient and the hessians - This task is also time expensive
+            #encGArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
+            #encHArr = np.empty(qDataBase.nUsers,dtype=PyCtxt)
+            # Encryption takes to long. Comment for measuuring the bytes only
+            # for i in range((qDataBase.nUsers)):
+            #    encGArr[i] = self.HEHandler.encryptFrac(qDataBase.gradVec[i])
+            #    encHArr[i] = self.HEHandler.encryptFrac(qDataBase.hessVec[i])
+            
+            encrG = self.HEHandler.encryptFrac(qDataBase.gradVec[0])
+            
+            encGPHE = self.pubkey.encrypt(0, precision = 16)
+            print((encGPHE.ciphertext()))
+
+            nTx = 2 * qDataBase.nUsers * len(encrG.to_bytes()) # Sending g and h --> multiplies by 2, Rx is neglectable
+            for i in range(2, comm.Get_size()):
+                self.commLogger.log_nTx(nTx, i, self.treeID)
+        else:
+
+            pass
+
         return sInfo
 
+ 
 
 
 class VerticalSecureBoostTreePHE(FLPlainXGBoostTree):
