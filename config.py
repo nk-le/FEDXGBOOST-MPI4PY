@@ -12,8 +12,8 @@ modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost"]
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits"]
 
 CONFIG = {
-  "model": modelArr[0],
-  "dataset": dataset[0],
+  "model": modelArr[1],
+  "dataset": dataset[1],
 }
 
 np.random.seed(10)
@@ -26,7 +26,7 @@ day = date.today().strftime("%b-%d-%Y")
 
 curTime = round(time.time())
 
-logName = 'Log/{}/{}_{}_{}/Rank_{}.log'.format(str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
+logName = 'Log/VARYING_PARAM/{}/{}_{}_{}/Rank_{}.log'.format(str(day), str(curTime), str(CONFIG["dataset"]), str(CONFIG["model"]), str(rank))
 os.makedirs(os.path.dirname(logName), exist_ok=True)
 
 file_handler = logging.FileHandler(logName, mode='w')

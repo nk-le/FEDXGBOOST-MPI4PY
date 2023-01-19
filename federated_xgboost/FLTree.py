@@ -69,26 +69,13 @@ class FLXGBoostClassifierBase():
 
         # Start federated boosting
         tStartBoost = self.excTimeLogger.log_start_boosting()
-        
-        
-        # abortSig = comm.irecv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.ABORT_INFERENCE_SIG)            
-        #     isAbort, mes = abortSig.test()
-        #     # Synchronous modes as performing the federated inference
-        #     while(not isAbort):
-        #         self.classify_fed(database)        
-        #         isAbort, mes = abortSig.test()
-
-        # for partners in range(2, nprocs):
-        #     data = comm.send(sInfo, dest = partners, tag = MSG_ID.OPTIMAL_SPLITTING_SELECTION)
-        
-        # nprocs = comm.Get_size()
-        #     # Collect all private splitting info from the partners to find the optimal splitting candidates
-        #     for i in range(2, nprocs):
-        #         # Receive the Secure Response from the PP
-        #         stat = MPI.Status()
-        #         rxSM = comm.recv(source=MPI.ANY_SOURCE, tag = MSG_ID.RAW_SPLITTING_MATRIX, status = stat)
-        #         logger.info("Received the secure response from the passive party")       
-
+            
+        nprocs = comm.Get_size()
+        if rank == PARTY_ID.ACTIVE_PARTY:
+            newTreeGain = 0
+            loss = self.trees[0].learningParam.LOSS_FUNC.diff(y, y_pred)
+            print("nTreeTotal", self.nTree,"Loss", abs(loss), "Tree Gain", newTreeGain)
+            logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", -1, abs(loss), abs(newTreeGain))
 
         for i in range(self.nTree): 
             tStartTree = TimeLogger.tic()    
@@ -104,24 +91,46 @@ class FLXGBoostClassifierBase():
 
             if rank == PARTY_ID.ACTIVE_PARTY:
                 update_pred = np.reshape(update_pred, (self.dataBase.nUsers, 1))
-                
                 # aggresgate the prediction to compute the loss
                 y_pred += update_pred
-                self.evaluate(y_pred, y, i)
+                self.evaluatePrediction(y_pred, y, i)
                 
                 # Evaluation
-                newTreeGain = abs(self.trees[i].root.compute_score())
-                loss = self.trees[i].learningParam.LOSS_FUNC.diff(y, y_pred)
-                print("Loss", abs(loss), "Tree Gain", newTreeGain)
-                logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", self.trees[i].treeID, abs(loss), abs(newTreeGain))
+                prevLoss = loss
+                loss = self.evaluateTree(y_pred, y, i)
                 
-                #loss = self.trees[i].learningParam.LOSS_FUNC.diff(y, y_pred)
-                #print("External Loss: ", abs(loss))
+                # If terminating condition is triggered, we send the signal to all partners
+                isTerminated = abs(abs(prevLoss) - abs(loss)) < XgboostLearningParam.LOSS_TERMINATE
+                if isTerminated:
+                    print("Sending abort boosting flags to PP")
+                    logger.warning("Sending abort boosting flags to PP")
+                    for partners in range(2, nprocs):
+                        data = comm.send(True, dest = partners, tag = MSG_ID.ABORT_BOOSTING_SIG)
+                    
+                    break
+                else:
+                    for partners in range(2, nprocs):
+                        data = comm.send(False, dest = partners, tag = MSG_ID.ABORT_BOOSTING_SIG)
+ 
 
+            else:
+                abortFlag = comm.recv(source=PARTY_ID.ACTIVE_PARTY, tag = MSG_ID.ABORT_BOOSTING_SIG)
+                if(abortFlag):
+                    print("Received the abort boosting flag from AP")
+                    logger.warning("Received the abort boosting flag from AP")
+                    break       
+
+        print("Received the abort boosting flag from AP")
         self.excTimeLogger.log_end_boosting(tStartBoost)
 
+    def evaluateTree(self, yPred, y, treeid = int):
+        newTreeGain = abs(self.trees[treeid].root.compute_score())
+        loss = self.trees[treeid].learningParam.LOSS_FUNC.diff(y, yPred)
+        print("Loss", abs(loss), "Tree Gain", newTreeGain)
+        logger.warning("Boosting, TreeID: %d, Loss: %f, Gain: %f", treeid, abs(loss), abs(newTreeGain))
+        return loss
 
-    def evaluate(self, y_pred, y, treeid = None):
+    def evaluatePrediction(self, y_pred, y, treeid = None):
         y_pred = 1.0 / (1.0 + np.exp(-y_pred)) # Mapping to -1, 1
         y_pred_true = y_pred.copy()
         y_pred[y_pred > 0.5] = 1
@@ -167,7 +176,6 @@ class FLPlainXGBoostTree():
         self.root = FLTreeNode()
         self.nNode = 0
         self.treeID = id
-        print("Hello", self.treeID)
         self.commLogger = CommunicationLogger(N_CLIENTS)
 
     def fit_fed(self, y, yPred, qDataBase: QuantiledDataBase):

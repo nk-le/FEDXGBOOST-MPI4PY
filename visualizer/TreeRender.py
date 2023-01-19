@@ -28,6 +28,7 @@ class FLVisNode():
         # No child.
         if self.right is None and self.left is None:
             line = 'FID: %d: ' % self.fid + '[N = %d: W = %s S: %s]' % (self.nUsers, str(self.weight), str(self.score))
+            line = 'w = %.2f' % self.weight
             width = len(line)
             height = 1
             middle = width // 2
@@ -56,9 +57,9 @@ class FLVisNode():
         # Two children.
         left, n, p, x = self.left._display_aux()
         right, m, q, y = self.right._display_aux()
-        #s = '%s' % self.key
+        s = '%s' % self.key
         #print(self.splittingInfo.selectedFeatureID)
-        s = 'FID: %d: ' % self.fid + self.splittingInfo.get_str_split_info() 
+        #s = 'FID: %d: ' % self.fid + self.splittingInfo.get_str_split_info() 
         u = len(s)
         first_line = (x + 1) * ' ' + (n - x - 1) * '_' + s + y * '_' + (m - y) * ' '
         second_line = x * ' ' + '/' + (n - x - 1 + u + y) * ' ' + '\\' + (m - y - 1) * ' '

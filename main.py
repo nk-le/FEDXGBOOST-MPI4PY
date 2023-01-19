@@ -291,7 +291,7 @@ def main():
                 y_pred, y_test, model = test_default_credit_client(model)
             
             if rank == PARTY_ID.ACTIVE_PARTY:
-                acc, auc = model.evaluate(y_pred, y_test, treeid="FINAL")
+                acc, auc = model.evaluatePrediction(y_pred, y_test, treeid="FINAL")
 
             
                 

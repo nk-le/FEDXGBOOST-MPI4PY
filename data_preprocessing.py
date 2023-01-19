@@ -39,7 +39,7 @@ def get_give_me_credits():
     # Normalize the data
     data = data / data.max(axis=0)
 
-    ratio = 100000 / data.shape[0]
+    ratio = 60000 / data.shape[0]
 
     zero_index = data[:, 0] == 0
     one_index = data[:, 0] == 1
