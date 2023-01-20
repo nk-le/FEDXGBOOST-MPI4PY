@@ -1,0 +1,4 @@
+WARNING - [FedXGBoostTree.py:41 - log] FedXGBoostParam, r : 0.030000
+WARNING - [main.py:277 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'GiveMeCredits', 'lambda': 1, 'gamma': 5, 'MAX_DEPTH': 6, 'MAX_TREE': 8}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 8, maxDepth: 6, lambda: 1.000000, gamma: 5.000000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
