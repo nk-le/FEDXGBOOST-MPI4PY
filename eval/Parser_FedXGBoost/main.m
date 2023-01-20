@@ -1,9 +1,9 @@
 
-%path = fullfile(pwd, "Log", "Test_NFEATURE_AugData");
-%path = fullfile(pwd, "Log", "SCALABILITY_NINSTANCES_GivemeCredits");
-%path = fullfile(pwd, "Log", "Test_NUSERS_GivemeCredits");
-%path = fullfile(pwd, "Log", "Test_NFEATURE_AugData/");
-path = fullfile(pwd, "Log", "Test_VARYING_GivemeCredits");
+%path = fullfile(pwd, "DataLog", "Test_NFEATURE_AugData");
+%path = fullfile(pwd, "DataLog", "SCALABILITY_NINSTANCES_GivemeCredits");
+%path = fullfile(pwd, "DataLog", "Test_NUSERS_GivemeCredits");
+%path = fullfile(pwd, "DataLog", "Test_NFEATURE_AugData/");
+path = fullfile(pwd, "DataLog", "Test_VARYING_GivemeCredits");
 
 dataLogScalability.FedXGBoost = parse_folder(fullfile(path, "FedXGBoost"));
 dataLogScalability.PlainXGBoost = parse_folder(fullfile(path, "PlainXGBoost"));
