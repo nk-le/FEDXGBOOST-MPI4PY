@@ -11,10 +11,10 @@ modelArr = ["PlainXGBoost", "FedXGBoost", "SecureBoost", "PseudoSecureBoost", "F
 dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 
 CONFIG = {
-  "model": modelArr[0],
+  "model": modelArr[1],
   "dataset": dataset[1],
   "lambda": 1,
-  "gamma": 0.01,
+  "gamma": 0.5,
   "MAX_DEPTH": 8,
   "MAX_TREE": 15
 }
