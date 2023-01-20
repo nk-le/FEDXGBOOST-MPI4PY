@@ -13,10 +13,10 @@ dataset = ["Iris", "GiveMeCredits", "Adult", "DefaultCredits", "AugData"]
 CONFIG = {
   "model": modelArr[1],
   "dataset": dataset[1],
-  "lambda": 1,
-  "gamma": 0.2, # 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10  
-  "MAX_DEPTH": 3,
-  "MAX_TREE": 6
+  "lambda": 10, # 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10 ###### CAI SO NAY NE
+  "gamma": 0.5, # 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10  
+  "MAX_DEPTH": 8,
+  "MAX_TREE": 15
 }
 
 class SIM_PARAM:
@@ -29,7 +29,7 @@ Dataset: GivemeCredits
 N: 10k, 20k, 30k, 50k, 80k 120
 
 """
-TEST_CASE = "VARYING_HYPERPARAM_MAXDEPTH6" # NFEATURE_AugData", ACCELERATE_FEDXGBOOST_FAST_RESPONSE_SECURE
+TEST_CASE = "VARYING_HYPERPARAM_LAMBDA" # NFEATURE_AugData", ACCELERATE_FEDXGBOOST_FAST_RESPONSE_SECURE
 
 
 random.seed(10)
