@@ -1,0 +1,118 @@
+WARNING - [FedXGBoostTree.py:41 - log] FedXGBoostParam, r : 0.030000
+WARNING - [main.py:277 - main] TestInfo, {'model': 'FedXGBoost', 'dataset': 'GiveMeCredits', 'lambda': 1, 'gamma': 10, 'MAX_DEPTH': 3, 'MAX_TREE': 8}
+WARNING - [main.py:278 - main] XGBoostParameter, nTree: 8, maxDepth: 3, lambda: 1.000000, gamma: 10.000000
+WARNING - [main.py:280 - main] QuantileParameter, eps: 0.005000, thres: 0.300000
+WARNING - [main.py:29 - log_distribution] DataDistribution, nTrain: 80000, zeroRate: 0.930525, nTest: 10000, ratioTest: 0.930600, nFeature: 10
+WARNING - [FLTree.py:53 - append_data] Appended data feature ['RevolvingUtilizationOfUnsecuredLines', 'age'] to database of party 1
+WARNING - [FLTree.py:76 - boost] Boosting, TreeID: -1, Loss: 99502.935002, Gain: 0.000000
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 1536000000, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 4480000, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 543942336, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 3047296, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 77205152, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 717520, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 211293120, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 1661856, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 0, nTx: 251574448, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 0, nRx: 2072704, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 0
+WARNING - [TreeRender.py:23 - display]           _________1____     
+WARNING - [TreeRender.py:23 - display]          /              \    
+WARNING - [TreeRender.py:23 - display]      ____2____      w = -3.51
+WARNING - [TreeRender.py:23 - display]     /         \              
+WARNING - [TreeRender.py:23 - display] w = -3.13 w = -3.35          
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 0,  dt: 48.84522954300337
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 0,  dt: 1.5109730569965905
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 0, acc: 0.930525, auc: 0.615985
+WARNING - [FLTree.py:130 - evaluateTree] Boosting, TreeID: 0, Loss: 20070.634888, Gain: 89162.774655
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 1536000000, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 4480000, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 677628528, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 3826008, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 88177400, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 766760, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 276923440, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 1902320, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 172984840, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 1504216, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 27510984, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 599928, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 1, nTx: 62525056, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 1, nRx: 775104, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 1
+WARNING - [TreeRender.py:23 - display]          _________1_________          
+WARNING - [TreeRender.py:23 - display]         /                   \         
+WARNING - [TreeRender.py:23 - display]      ___2____           ____1____     
+WARNING - [TreeRender.py:23 - display]     /        \         /         \    
+WARNING - [TreeRender.py:23 - display] w = 0.09 w = -0.19 w = -0.37 w = -0.66
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 1,  dt: 55.35815966800146
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 1,  dt: 1.6954944769968279
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 1, acc: 0.930525, auc: 0.624442
+WARNING - [FLTree.py:130 - evaluateTree] Boosting, TreeID: 1, Loss: 19666.962973, Gain: 314.550837
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 1536000000, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 4480000, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 454853680, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 2089680, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 149656192, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 599424, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 82550432, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 742360, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 318849960, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 2042040, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 31261536, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 548448, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 2, nTx: 150434312, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 2, nRx: 1402184, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 2
+WARNING - [TreeRender.py:23 - display]           _________2________          
+WARNING - [TreeRender.py:23 - display]          /                  \         
+WARNING - [TreeRender.py:23 - display]      ____2____           ___1____     
+WARNING - [TreeRender.py:23 - display]     /         \         /        \    
+WARNING - [TreeRender.py:23 - display] w = -0.21 w = -0.03 w = 0.29 w = -0.09
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 2,  dt: 52.05427192999923
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 2,  dt: 3.2507672939973418
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 2, acc: 0.930525, auc: 0.635269
+WARNING - [FLTree.py:130 - evaluateTree] Boosting, TreeID: 2, Loss: 19585.484933, Gain: 42.302248
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 1536000000, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 4480000, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 215067408, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 957984, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 25033248, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 163616, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 93193608, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 473064, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 601156504, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 2403024, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 219523024, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 968128, Partner: 2
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 3, nTx: 94132368, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 3, nRx: 950832, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 3
+WARNING - [TreeRender.py:23 - display]          _________2_________         
+WARNING - [TreeRender.py:23 - display]         /                   \        
+WARNING - [TreeRender.py:23 - display]      ___2____           ____2____    
+WARNING - [TreeRender.py:23 - display]     /        \         /         \   
+WARNING - [TreeRender.py:23 - display] w = 0.39 w = -0.10 w = -0.17 w = 0.07
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 3,  dt: 51.77442266100843
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 3,  dt: 4.168328718005796
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 3, acc: 0.930525, auc: 0.643321
+WARNING - [FLTree.py:130 - evaluateTree] Boosting, TreeID: 3, Loss: 19494.883192, Gain: 55.474925
+WARNING - [PerformanceLogger.py:23 - log_nTx] CommunicationTX, TreeID: 4, nTx: 1536000000, Partner: 2
+WARNING - [PerformanceLogger.py:19 - log_nRx] CommunicationRX, TreeID: 4, nRx: 4480000, Partner: 2
+WARNING - [TreeRender.py:21 - display] TreeStructure, TreeID: 4
+WARNING - [TreeRender.py:23 - display] w = -0.02
+WARNING - [PerformanceLogger.py:45 - log_dt_fit] FitTime, TreeID: 4,  dt: 21.694194727999275
+WARNING - [PerformanceLogger.py:50 - log_dt_pred] PredTime, TreeID: 4,  dt: 0.027663745000609197
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 4, acc: 0.930525, auc: 0.643321
+WARNING - [FLTree.py:130 - evaluateTree] Boosting, TreeID: 4, Loss: 19494.251403, Gain: 9.371041
+WARNING - [FLTree.py:106 - boost] Sending abort boosting flags to PP
+WARNING - [PerformanceLogger.py:64 - log] ExecutionTime, dtBoost: 240.7, nTree = 5, dtTree: [48.84522954300337, 55.35815966800146, 52.05427192999923, 51.77442266100843, 21.694194727999275], dtPred: [1.5109730569965905, 1.6954944769968279, 3.2507672939973418, 4.168328718005796, 0.027663745000609197]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [4480000, 3047296, 717520, 1661856, 2072704], [], []], nTx: [[], [], [1536000000, 543942336, 77205152, 211293120, 251574448], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [4480000, 3826008, 766760, 1902320, 1504216, 599928, 775104], [], []], nTx: [[], [], [1536000000, 677628528, 88177400, 276923440, 172984840, 27510984, 62525056], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [4480000, 2089680, 599424, 742360, 2042040, 548448, 1402184], [], []], nTx: [[], [], [1536000000, 454853680, 149656192, 82550432, 318849960, 31261536, 150434312], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [4480000, 957984, 163616, 473064, 2403024, 968128, 950832], [], []], nTx: [[], [], [1536000000, 215067408, 25033248, 93193608, 601156504, 219523024, 94132368], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [4480000], [], []], nTx: [[], [], [1536000000], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [], [], []], nTx: [[], [], [], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [], [], []], nTx: [[], [], [], [], []]
+WARNING - [PerformanceLogger.py:26 - log] Communication, nRx: [[], [], [], [], []], nTx: [[], [], [], [], []]
+WARNING - [FLTree.py:141 - evaluatePrediction] Metrics, TreeID: 99, acc: 0.930600, auc: 0.620158
